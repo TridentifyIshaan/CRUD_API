@@ -21,16 +21,17 @@
 - [🚀 5. Execution & Runtime Operations](#-5-execution--runtime-operations)
   - [5.1 Local Development (Hot-Reload)](#51-local-development-hot-reload)
   - [5.2 Production ASGI Service](#52-production-asgi-service)
-- [📖 6. Interactive Documentation & Schema Contracts](#-6-interactive-documentation--schema-contracts)
-  - [6.1 Documentation Interfaces](#61-documentation-interfaces)
-  - [6.2 Schema & Contract Design](#62-schema--contract-design)
-- [🔌 7. API Endpoints & Request/Response Verification](#-7-api-endpoints--requestresponse-verification)
-  - [7.1 Endpoint Inventory](#71-endpoint-inventory)
-  - [7.2 Terminal Verification via cURL](#72-terminal-verification-via-curl)
-- [🚢 8. Deployment Architecture](#-8-deployment-architecture)
-  - [8.1 FastAPI Cloud CLI Deployment](#81-fastapi-cloud-cli-deployment)
-  - [8.2 Containerized Production Deployment](#82-containerized-production-deployment)
-- [🔒 9. Proprietary Rights & Ownership Notice](#-9-proprietary-rights--ownership-notice)
+- [🚦 6. Stage-by-Stage Implementation Matrix](#-6-stage-by-stage-implementation-matrix)
+- [📖 7. Interactive Documentation & Schema Contracts](#-7-interactive-documentation--schema-contracts)
+  - [7.1 Documentation Interfaces](#71-documentation-interfaces)
+  - [7.2 Schema & Contract Design](#72-schema--contract-design)
+- [🔌 8. API Endpoints & Request/Response Verification](#-8-api-endpoints--requestresponse-verification)
+  - [8.1 Full Endpoint Inventory](#81-full-endpoint-inventory)
+  - [8.2 Terminal Verification via cURL (Full CRUD Suite)](#82-terminal-verification-via-curl-full-crud-suite)
+- [🚢 9. Deployment Architecture](#-9-deployment-architecture)
+  - [9.1 FastAPI Cloud CLI Deployment](#91-fastapi-cloud-cli-deployment)
+  - [9.2 Containerized Production Deployment](#92-containerized-production-deployment)
+- [🔒 10. Proprietary Rights & Ownership Notice](#-10-proprietary-rights--ownership-notice)
 
 --------
 
@@ -45,29 +46,26 @@ Modern backend services require deterministic dependencies, minimal cold-start l
 ### 1.2 Request-Response Lifecycle Flow
 
 ```text
-                  [Incoming Client HTTP Request]
-                               │
-                               ▼
-                   [Uvicorn / ASGI Web Server]
-                               │
-                               ▼
-                    [FastAPI Request Router]
-                     (Route & Method Match)
-                               │
-                ┌──────────────┴──────────────┐
-                ▼                             ▼
-        [Path Match: /]              [Unmatched Path]
-                │                             │
-                ▼                             ▼
-       [Async Route Handler]            [HTTP 404]
-        (backend.main:root)           {"detail": "Not Found"}
-                │
-                ▼
-        [JSON Serialization]
-     {"message": "Hello World"}
-                │
-                ▼
-     [HTTP 200 OK Response]
+                            [Incoming Client HTTP Request]
+                                          │
+                                          ▼
+                             [Uvicorn / ASGI Web Server]
+                                          │
+                                          ▼
+                               [FastAPI Request Router]
+                                (Route & Method Match)
+                                          │
+             ┌────────────────────┬───────┴────────┬────────────────────┐
+             ▼                    ▼                ▼                    ▼
+        [GET /tasks]       [POST /tasks]    [PUT /tasks/{id}]   [DELETE /tasks/{id}]
+             │                    │                │                    │
+             ▼                    ▼                ▼                    ▼
+     [Read Operations]    [Input Validation] [Field Updates]     [Task Removal]
+     (Return Task List)   (Pydantic Schema)  (Title / Done)     (Remove from Store)
+             │                    │                │                    │
+             ▼                    ▼                ▼                    ▼
+        [200 OK]            [201 Created]       [200 OK]         [204 No Content]
+      (JSON Array)          (Task Object)     (Updated Task)       (Empty Body)
 ```
 
 ### 1.3 Key Architectural Strengths
@@ -86,7 +84,7 @@ Modern backend services require deterministic dependencies, minimal cold-start l
 ```text
 CRUD_API/
 ├── backend/
-│   └── main.py          ← Core application entrypoint, route definitions, and async handlers
+│   └── main.py          ← Core application entrypoint, stage-divided route definitions, and handlers
 ├── pyproject.toml       ← Project metadata & FastAPI CLI entrypoint orchestration
 ├── requirements.txt     ← Locked root dependencies (fastapi[standard])
 ├── .gitignore           ← Workspace ignore rules (.venv, pycache, OS artifacts)
@@ -198,9 +196,25 @@ uv run fastapi run --port 8080 --host 0.0.0.0
 
 --------
 
-## 📖 6. Interactive Documentation & Schema Contracts
+## 🚦 6. Stage-by-Stage Implementation Matrix
 
-### 6.1 Documentation Interfaces
+The codebase is engineered incrementally across structured architectural stages:
+
+| Stage | Focus & Scope | Endpoints Implemented | Status Codes | Status |
+| :---: | :--- | :--- | :---: | :---: |
+| **0** | **Application Initialization** | `FastAPI()` instance creation & base server | `200` | ✅ Complete |
+| **1** | **Root & Health Discovery** | `GET /`, `GET /health` | `200` | ✅ Complete |
+| **2** | **Read Operations** | `GET /tasks`, `GET /tasks/{task_id}` | `200`, `404` | ✅ Complete |
+| **3** | **Create with Validation** | `POST /tasks` | `201`, `400` | ✅ Complete |
+| **4** | **Full CRUD (Update & Delete)** | `PUT /tasks/{task_id}`, `DELETE /tasks/{task_id}` | `200`, `204`, `400`, `404` | ✅ Complete |
+| **5** | **Interactive Contract Audit** | Swagger UI verification via `/docs` | All | 🔄 Interactive |
+| **6** | **GitHub Versioning & Delivery** | ≥ 6 discrete stage commits & docs | N/A | 🔄 In Progress |
+
+--------
+
+## 📖 7. Interactive Documentation & Schema Contracts
+
+### 7.1 Documentation Interfaces
 
 FastAPI parses route operations at startup and mounts real-time documentation interfaces:
 
@@ -210,7 +224,7 @@ FastAPI parses route operations at startup and mounts real-time documentation in
 | **ReDoc** | [http://localhost:8000/redoc](http://localhost:8000/redoc) | Clean, publication-grade responsive documentation layout. |
 | **OpenAPI Schema** | [http://localhost:8000/openapi.json](http://localhost:8000/openapi.json) | Raw machine-readable OpenAPI 3.1.0 specification in JSON format. |
 
-### 6.2 Schema & Contract Design
+### 7.2 Schema & Contract Design
 
 - **API Specification (OpenAPI 3.1)**: Defines the outer contract boundaries—HTTP paths, methods, parameters, status codes, and security definitions.
 - **Data Schemas (JSON Schema)**: Outlines the physical shape, types, constraints, and validation rules of request and response payloads.
@@ -218,39 +232,94 @@ FastAPI parses route operations at startup and mounts real-time documentation in
 
 --------
 
-## 🔌 7. API Endpoints & Request/Response Verification
+## 🔌 8. API Endpoints & Request/Response Verification
 
-### 7.1 Endpoint Inventory
+### 8.1 Full Endpoint Inventory
 
-| Method | Endpoint | HTTP Status | Description | Response Model |
-| :---: | :--- | :---: | :--- | :--- |
-| `GET` | `/` | `200 OK` | Root health probe & service greeting | `{"message": "string"}` |
+| Method | Endpoint | HTTP Status | Description | Request Body | Response Model |
+| :---: | :--- | :---: | :--- | :---: | :--- |
+| `GET` | `/` | `200 OK` | Root metadata & service discovery | None | `{"name": "...", "version": "...", "endpoints": [...]}` |
+| `GET` | `/health` | `200 OK` | Health probe for monitoring | None | `{"status": "ok"}` |
+| `GET` | `/tasks` | `200 OK` | List all tasks | None | Array of Task objects |
+| `GET` | `/tasks/{task_id}` | `200 OK` / `404` | Retrieve single task by ID | None | Single Task object |
+| `POST` | `/tasks` | `201 Created` / `400` | Create new task | `{"title": "string"}` | Newly created Task object |
+| `PUT` | `/tasks/{task_id}` | `200 OK` / `400` / `404` | Update title and/or done status | `{"title"?: "...", "done"?: bool}` | Updated Task object |
+| `DELETE` | `/tasks/{task_id}` | `204 No Content` / `404` | Remove task by ID | None | Empty response body |
 
-### 7.2 Terminal Verification via cURL
+### 8.2 Terminal Verification via cURL (Full CRUD Suite)
 
-To inspect raw response headers, transmission timing, and status codes:
-
+#### 1. Root & Health Probes (Stage 1)
 ```sh
 curl -i http://localhost:8000/
+# HTTP/1.1 200 OK
+# {"name":"Task API","version":"1.0","endpoints":["/tasks","/health"]}
+
+curl -i http://localhost:8000/health
+# HTTP/1.1 200 OK
+# {"status":"ok"}
 ```
 
-**Verified Terminal Output:**
+#### 2. Read Operations (Stage 2)
+```sh
+# Fetch all tasks
+curl -i http://localhost:8000/tasks
 
-```http
-HTTP/1.1 200 OK
-date: Sun, 09 Nov 2026 11:45:00 GMT
-server: uvicorn
-content-length: 25
-content-type: application/json
+# Fetch a valid single task (HTTP 200)
+curl -i http://localhost:8000/tasks/1
 
-{"message":"Hello World"}
+# Lookup non-existent task (HTTP 404)
+curl -i http://localhost:8000/tasks/99
+# HTTP/1.1 404 Not Found
+# {"detail":"Task 99 not found"}
+```
+
+#### 3. Create Operation with Validation (Stage 3)
+```sh
+# Successfully create a task (HTTP 201)
+curl -i -X POST http://localhost:8000/tasks \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Draft architectural design RFC"}'
+# HTTP/1.1 201 Created
+# {"id":5,"title":"Draft architectural design RFC","done":false}
+
+# Validation error on empty body (HTTP 400)
+curl -i -X POST http://localhost:8000/tasks \
+  -H "Content-Type: application/json" \
+  -d '{}'
+# HTTP/1.1 400 Bad Request
+# {"detail":"Title is required and cannot be empty"}
+```
+
+#### 4. Update & Delete Operations (Stage 4)
+```sh
+# Update title and mark complete (HTTP 200)
+curl -i -X PUT http://localhost:8000/tasks/1 \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Onboarding complete & env configured", "done": true}'
+# HTTP/1.1 200 OK
+
+# Validation check on empty PUT body (HTTP 400)
+curl -i -X PUT http://localhost:8000/tasks/1 \
+  -H "Content-Type: application/json" \
+  -d '{}'
+# HTTP/1.1 400 Bad Request
+# {"detail":"Must provide title or done to update"}
+
+# Delete a task (HTTP 204)
+curl -i -X DELETE http://localhost:8000/tasks/1
+# HTTP/1.1 204 No Content
+
+# Verify deletion (HTTP 404)
+curl -i http://localhost:8000/tasks/1
+# HTTP/1.1 404 Not Found
+# {"detail":"Task 1 not found"}
 ```
 
 --------
 
-## 🚢 8. Deployment Architecture
+## 🚢 9. Deployment Architecture
 
-### 8.1 FastAPI Cloud CLI Deployment
+### 9.1 FastAPI Cloud CLI Deployment
 
 FastAPI provides integrated deployment workflows to package and ship applications directly:
 
@@ -260,7 +329,7 @@ uv run fastapi deploy
 
 This bundles the application according to the entrypoint declared in `pyproject.toml` and initiates cloud provisioning.
 
-### 8.2 Containerized Production Deployment
+### 9.2 Containerized Production Deployment
 
 For deployment inside Docker, Kubernetes, AWS ECS, GCP Cloud Run, or Fly.io:
 
@@ -287,7 +356,7 @@ CMD ["fastapi", "run", "backend/main.py", "--port", "8000", "--host", "0.0.0.0"]
 
 --------
 
-## 🔒 9. Proprietary Rights & Ownership Notice
+## 🔒 10. Proprietary Rights & Ownership Notice
 
 **Copyright © 2026 Ishaan Rastogi. All Rights Reserved.**
 
