@@ -1,4 +1,4 @@
-from fastapi import FastAPI # FastAPI class is imported
+from fastapi import FastAPI, HTTPException # FastAPI class is imported
 
 app = FastAPI() # instance of FastAPI class is created
 
@@ -10,3 +10,21 @@ async def root():
 @app.get("/health")
 async def health():
     return {"status": "ok"}
+
+tasks = [
+    {"id": 1, "title": "Complete Stage 0", "done": True},
+    {"id": 2, "title": "Complete Stage 1", "done": True},
+    {"id": 3, "title": "Complete Stage 2", "done": True},
+    {"id": 4, "title": "Complete Stage 3", "done": False},
+]
+
+@app.get("/tasks")
+async def get_tasks():
+    return tasks
+
+@app.get("/tasks/{task_id}")
+async def get_task(task_id: int):
+    for task in tasks:
+        if task["id"] == task_id:
+            return task
+    raise HTTPException(status_code=404, detail=f"Task {task_id} not found")
