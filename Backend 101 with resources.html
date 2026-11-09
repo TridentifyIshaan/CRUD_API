@@ -1,0 +1,1620 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Backend 101 — How the Web Works · Task API</title>
+    <style>
+      :root {
+        --bg: #0a2426;
+        --card: #102e2f;
+        --card2: #16393a;
+        --ink: #071a1c;
+        --acc: #6cdd9b;
+        --txt: #f1f1f1;
+        --mut: #9fb8b2;
+        --warn: #f9c74f;
+        --err: #f97066;
+        --blue: #8ab4f8;
+        --side: 240px;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        background: var(--bg);
+        color: var(--txt);
+        font-family:
+          "Segoe UI",
+          system-ui,
+          -apple-system,
+          sans-serif;
+        overflow: hidden;
+      }
+      .mono {
+        font-family: "Cascadia Code", "Fira Code", Consolas, monospace;
+      }
+      button {
+        cursor: pointer;
+        border: none;
+        border-radius: 8px;
+        font-weight: 700;
+        font-family: inherit;
+      }
+
+      /* ===== layout ===== */
+      #app {
+        display: flex;
+        height: 100vh;
+      }
+      /* sidebar */
+      #side {
+        width: var(--side);
+        min-width: var(--side);
+        background: var(--ink);
+        padding: 16px 0;
+        overflow-y: auto;
+        border-right: 1px solid var(--card2);
+        transition: margin 0.25s;
+      }
+      #side.hidden {
+        margin-left: calc(var(--side) * -1);
+      }
+      #side .brand {
+        padding: 0 16px 12px;
+        border-bottom: 1px solid var(--card2);
+        margin-bottom: 10px;
+      }
+      #side .brand .fr {
+        font-size: 17px;
+        font-weight: 800;
+        color: #fff;
+      }
+      #side .brand .fr span {
+        color: var(--acc);
+      }
+      #side .brand .wk {
+        font-size: 10px;
+        color: var(--mut);
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        margin-top: 2px;
+      }
+      #side .chap {
+        font-size: 9.5px;
+        letter-spacing: 0.2em;
+        color: var(--acc);
+        text-transform: uppercase;
+        font-weight: 700;
+        padding: 12px 16px 4px;
+      }
+      #side a {
+        display: block;
+        padding: 5px 16px 5px 22px;
+        color: var(--mut);
+        text-decoration: none;
+        font-size: 12.5px;
+        border-left: 3px solid transparent;
+        line-height: 1.35;
+      }
+      #side a:hover {
+        color: var(--txt);
+        background: var(--card);
+      }
+      #side a.on {
+        color: var(--acc);
+        border-left-color: var(--acc);
+        background: var(--card);
+        font-weight: 600;
+      }
+      /* main */
+      #main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+      #topbar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 18px;
+        border-bottom: 1px solid var(--card2);
+      }
+      #topbar .tb {
+        background: var(--card);
+        color: var(--mut);
+        padding: 6px 12px;
+        font-size: 12px;
+      }
+      #topbar .tb:hover {
+        color: var(--txt);
+      }
+      #counter {
+        margin-left: auto;
+        color: var(--mut);
+        font-size: 12px;
+      }
+      #progress {
+        height: 3px;
+        background: var(--card);
+      }
+      #bar {
+        height: 100%;
+        width: 0;
+        background: var(--acc);
+        transition: width 0.25s;
+      }
+      #stage {
+        flex: 1;
+        overflow-y: auto;
+        padding: 28px 40px;
+      }
+      /* notes */
+      #notes {
+        display: none;
+        border-top: 1px solid var(--card2);
+        background: var(--ink);
+        padding: 10px 18px;
+        font-size: 12.5px;
+        color: var(--mut);
+        max-height: 22vh;
+        overflow-y: auto;
+      }
+      #notes.show {
+        display: block;
+      }
+      #notes b {
+        color: var(--acc);
+      }
+      /* nav arrows */
+      #navbtns {
+        position: fixed;
+        right: 18px;
+        bottom: 16px;
+        display: flex;
+        gap: 8px;
+        z-index: 5;
+      }
+      #navbtns button {
+        background: var(--card2);
+        color: var(--txt);
+        width: 40px;
+        height: 40px;
+        font-size: 16px;
+        border-radius: 50%;
+      }
+      #navbtns button:hover {
+        background: var(--acc);
+        color: var(--ink);
+      }
+
+      /* ===== slide primitives ===== */
+      .slide {
+        display: none;
+        max-width: 1060px;
+        margin: 0 auto;
+        animation: fade 0.25s;
+      }
+      .slide.active {
+        display: block;
+      }
+      @keyframes fade {
+        from {
+          opacity: 0;
+          transform: translateY(6px);
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      .kick {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        color: var(--acc);
+        font-weight: 700;
+        letter-spacing: 0.24em;
+        font-size: 11px;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+      }
+      .kick::before {
+        content: "";
+        width: 11px;
+        height: 11px;
+        background: var(--acc);
+      }
+      h1.st {
+        font-size: clamp(24px, 3.2vw, 36px);
+        color: #fff;
+        margin-bottom: 8px;
+        line-height: 1.2;
+      }
+      .sub {
+        color: var(--mut);
+        font-size: 14.5px;
+        margin-bottom: 20px;
+      }
+      .cards {
+        display: grid;
+        gap: 14px;
+        margin: 14px 0;
+      }
+      .c2 {
+        grid-template-columns: 1fr 1fr;
+      }
+      .c3 {
+        grid-template-columns: 1fr 1fr 1fr;
+      }
+      .c4 {
+        grid-template-columns: repeat(4, 1fr);
+      }
+      .card {
+        background: var(--card);
+        border-radius: 12px;
+        padding: 16px;
+        border: 1.5px solid transparent;
+      }
+      .card.hl {
+        border-color: var(--acc);
+      }
+      .card.err {
+        border-color: var(--err);
+      }
+      .card.wrn {
+        border-color: var(--warn);
+      }
+      .card h3 {
+        font-size: 14.5px;
+        margin-bottom: 6px;
+      }
+      .card h3.g {
+        color: var(--acc);
+      }
+      .card h3.y {
+        color: var(--warn);
+      }
+      .card h3.r {
+        color: var(--err);
+      }
+      .card p {
+        font-size: 12.5px;
+        color: var(--txt);
+        line-height: 1.5;
+      }
+      .card .cap {
+        color: var(--mut);
+        font-size: 11.5px;
+      }
+      .strip {
+        background: var(--card2);
+        border-radius: 10px;
+        padding: 12px 16px;
+        font-size: 13px;
+        margin: 14px 0;
+        line-height: 1.55;
+      }
+      .strip b {
+        color: var(--acc);
+      }
+      .bl {
+        font-size: 13.5px;
+        color: var(--mut);
+        margin-top: 14px;
+        line-height: 1.55;
+      }
+      .bl b {
+        color: var(--txt);
+      }
+      .bl .g {
+        color: var(--acc);
+        font-weight: 700;
+      }
+      .ink {
+        background: var(--ink);
+        border-radius: 10px;
+        padding: 14px 16px;
+        font-size: 13px;
+        line-height: 1.7;
+        white-space: pre-wrap;
+      }
+      .ok {
+        color: var(--acc);
+      }
+      .bad {
+        color: var(--err);
+      }
+      .mid {
+        color: var(--warn);
+      }
+      .dim {
+        color: var(--mut);
+      }
+      .blu {
+        color: var(--blue);
+      }
+      .big {
+        font-size: 38px;
+        font-weight: 800;
+        text-align: center;
+      }
+      .ico {
+        font-size: 26px;
+        margin-bottom: 6px;
+      }
+      .arrowflow {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin: 10px 0;
+      }
+      .arrowflow .ar {
+        color: var(--acc);
+        font-size: 20px;
+      }
+      .pill {
+        display: inline-block;
+        background: var(--ink);
+        border-radius: 6px;
+        padding: 3px 9px;
+        font-size: 12px;
+        color: var(--txt);
+      }
+      .demo-tag {
+        display: inline-block;
+        background: var(--err);
+        color: #fff;
+        font-size: 10px;
+        letter-spacing: 0.15em;
+        padding: 3px 8px;
+        border-radius: 4px;
+        margin-left: 8px;
+        vertical-align: middle;
+      }
+      table.tt {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 12.5px;
+        margin: 10px 0;
+      }
+      table.tt th {
+        background: var(--card2);
+        color: var(--acc);
+        text-align: left;
+        padding: 7px 10px;
+        font-size: 11px;
+      }
+      table.tt td {
+        background: var(--card);
+        padding: 7px 10px;
+        border-top: 2px solid var(--bg);
+        vertical-align: top;
+      }
+      .dot {
+        display: inline-block;
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        margin-right: 6px;
+      }
+      .dg {
+        background: var(--acc);
+      }
+      .dy {
+        background: var(--warn);
+      }
+      .dr {
+        background: var(--err);
+      }
+
+      /* interactive bits */
+      .seg {
+        padding: 7px 9px;
+        border-radius: 8px;
+        border: 1.5px solid transparent;
+        background: var(--card);
+        cursor: pointer;
+        font-size: clamp(13px, 1.8vw, 18px);
+      }
+      .seg:hover {
+        border-color: var(--mut);
+      }
+      .seg.on {
+        border-color: var(--acc);
+        color: var(--acc);
+        background: var(--card2);
+      }
+      .urlbox {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        background: var(--ink);
+        border-radius: 10px;
+        padding: 14px;
+        justify-content: center;
+        margin-bottom: 12px;
+      }
+      .infobox {
+        background: var(--card2);
+        border-left: 4px solid var(--acc);
+        border-radius: 8px;
+        padding: 12px 14px;
+        min-height: 64px;
+        font-size: 13.5px;
+        line-height: 1.55;
+      }
+      .infobox b {
+        color: var(--acc);
+      }
+      .jstage {
+        display: flex;
+        gap: 8px;
+        background: var(--ink);
+        border-radius: 10px;
+        padding: 16px 12px;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+      }
+      .jnode {
+        flex: 1;
+        min-width: 90px;
+        text-align: center;
+        opacity: 0.35;
+        transition: 0.25s;
+      }
+      .jnode.on {
+        opacity: 1;
+        transform: scale(1.07);
+      }
+      .jnode .em {
+        font-size: 26px;
+      }
+      .jnode .nm {
+        font-size: 11px;
+        color: var(--mut);
+        margin-top: 3px;
+      }
+      .jnode.on .nm {
+        color: var(--acc);
+        font-weight: 700;
+      }
+      .btn {
+        background: var(--acc);
+        color: var(--ink);
+        padding: 8px 18px;
+        font-size: 13.5px;
+      }
+      .btn.ghost {
+        background: var(--card2);
+        color: var(--txt);
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+        margin: 10px 0;
+      }
+      select,
+      input[type="text"] {
+        background: var(--ink);
+        color: var(--txt);
+        border: 1px solid var(--card2);
+        border-radius: 8px;
+        padding: 8px 10px;
+        font-size: 13px;
+      }
+      .verb {
+        padding: 8px 16px;
+        background: var(--card2);
+        color: var(--txt);
+        font-size: 13px;
+      }
+      .verb.on {
+        background: var(--acc);
+        color: var(--ink);
+      }
+      .panes {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+      .pane {
+        background: var(--ink);
+        border-radius: 10px;
+        padding: 13px;
+        font-size: 12.5px;
+        min-height: 170px;
+        white-space: pre-wrap;
+      }
+      .pane h4 {
+        font-size: 10px;
+        letter-spacing: 0.18em;
+        color: var(--mut);
+        text-transform: uppercase;
+        margin-bottom: 8px;
+        font-family: "Segoe UI", sans-serif;
+      }
+      .fields {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin: 8px 0;
+      }
+      .fields label {
+        font-size: 13px;
+        display: flex;
+        gap: 5px;
+        align-items: center;
+        cursor: pointer;
+      }
+      .fields input {
+        accent-color: var(--acc);
+      }
+      @media (max-width: 860px) {
+        .c3,
+        .c4 {
+          grid-template-columns: 1fr 1fr;
+        }
+        .panes {
+          grid-template-columns: 1fr;
+        }
+        #side {
+          position: fixed;
+          z-index: 9;
+          height: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <nav id="side"></nav>
+      <div id="main">
+        <div id="topbar">
+          <button class="tb" id="tgSide">☰ Menu</button>
+          <button class="tb" id="tgNotes">Notes (N)</button>
+          <button class="tb" id="tgFull">Fullscreen (F)</button>
+          <span id="counter"></span>
+        </div>
+        <div id="progress"><div id="bar"></div></div>
+        <div id="stage"></div>
+        <div id="notes"></div>
+      </div>
+    </div>
+    <div id="navbtns">
+      <button id="prev">←</button><button id="next">→</button>
+    </div>
+
+    <script>
+      /* ================= SLIDES ================= */
+      const CH = {
+        F: "Foundations",
+        L: "The loop up close",
+        T: "See it live",
+        A: "APIs & beyond",
+        Y: "The project",
+      };
+      const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+      const slides = [];
+      const S = (chapter, nav, kick, title, body, notes) =>
+        slides.push({ chapter, nav, kick, title, body, notes });
+
+      /* 1 · Title */
+      (S(
+        CH.F,
+        "Welcome",
+        "FlyRank.ai · AI Backend Engineering",
+        "Backend 101 — How the Web Works",
+        `
+  <p class="sub">Concepts + live demos · ~60 min · No prior experience needed</p>
+  <div class="strip"><b>Overview:</b> what really happens when you open a website — clients, servers, URLs, HTTP, requests and responses — leading straight into the project: <b>build a CRUD Task API</b>.</div>
+  <p class="bl">Use <b>← →</b> or a clicker to move · <b>N</b> for speaker notes · <b>F</b> for fullscreen.</p>`,
+        "Frame: the foundation for everything that follows, and it ends inside the project. We skip cables-and-packets theory on purpose — resource list §1 has under-the-hood reads.",
+      ),
+        /* 2 · Clients & servers */
+        S(
+          CH.F,
+          "Clients & servers",
+          "The two roles",
+          "Clients ask. Servers answer.",
+          `
+  <p class="sub">The whole web is a restaurant — and this picture is the entire deck in one slide.</p>
+  <div class="arrowflow">
+    <div class="card" style="text-align:center; min-width:200px;"><div class="ico">🧑</div><h3 class="g">YOU — the client</h3><p class="cap">You pick from the menu and place an order</p></div>
+    <div class="ar">→</div>
+    <div class="card" style="text-align:center; min-width:200px;"><div class="ico">📋</div><h3 class="g">THE ORDER — a request</h3><p class="cap">Carried to the kitchen, written in a fixed format</p></div>
+    <div class="ar">→</div>
+    <div class="card" style="text-align:center; min-width:200px;"><div class="ico">👨‍🍳</div><h3 class="g">THE KITCHEN — the server</h3><p class="cap">Always open, prepares the answer to every order</p></div>
+  </div>
+  <p style="text-align:center; color:var(--mut); font-size:13px;">←  the meal comes back — that's the <b style="color:var(--txt)">response</b></p>
+  <div class="strip"><b>A client is anything that asks:</b> your browser · a phone app · curl · Swagger UI · even another server.</div>`,
+          "The most important slide of the day — say so. Client is a ROLE, not a device. Chat prompt: when your phone shows the weather, who is the client?",
+        ),
+        /* 3 · FE/BE */
+        S(
+          CH.F,
+          "Frontend vs backend",
+          "Where the code lives",
+          "Frontend and backend — two halves, one loop",
+          `
+  <div class="cards c2">
+    <div class="card"><div class="ico">📱</div><h3>Frontend — on your device</h3><p>Buttons, colors, text — everything you can see and touch. Runs in the browser or the app.</p></div>
+    <div class="card hl"><div class="ico">🗄️</div><h3 class="g">Backend — on a server</h3><p>Data, rules, passwords — everything you have to trust. Runs on a machine you never see. Decides what's allowed.</p></div>
+  </div>
+  <div class="strip"><b>One tap, one loop — Instagram:</b> you tap the ♥ (frontend) → it sends <span class="mono">POST /likes</span> → the backend checks you're allowed, saves it → responds <span class="ok mono">201</span> → the heart turns red (frontend again).</div>
+  <p class="bl"><b>They only ever talk through requests and responses.</b> <span class="g">This project builds the answering half.</span></p>`,
+          "Show them CONNECTED, not just split. Walk the like-button loop slowly. Chat: what else must the backend check before saving a like? (logged in? already liked? blocked?)",
+        ),
+        /* 4 · URL anatomy (interactive) */
+        S(
+          CH.F,
+          "Anatomy of a URL",
+          "The address",
+          "Anatomy of a URL — read any address",
+          `
+  <p class="sub">Click any part — every one has a small job. First the project's address, then the same address out in the real world.</p>
+  <p class="bl" style="margin:0 0 6px;"><b>While you build:</b></p>
+  <div class="urlbox" id="urlbox">
+    <span class="seg mono" data-k="protocol">http://</span><span class="seg mono" data-k="domain">localhost</span><span class="seg mono" data-k="port">:3000</span><span class="seg mono" data-k="path">/tasks/3</span><span class="seg mono" data-k="query">?done=true</span>
+  </div>
+  <p class="bl" style="margin:10px 0 6px;"><b>Out in the world:</b></p>
+  <div class="urlbox">
+    <span class="seg mono" data-k="rprotocol">https://</span><span class="seg mono" data-k="rdomain">flyrank.ai</span><span class="seg mono" data-k="rport">:443</span><span class="seg mono" data-k="rpath">/tasks/3</span><span class="seg mono" data-k="rquery">?done=true</span>
+  </div>
+  <div class="infobox" id="urlinfo"><b>Click a part above.</b> Hold the thought on <span class="mono">http://</span> — protocols get their own slide in a few minutes.</div>
+  <div class="strip"><b>Same shape, different home.</b> Deploying changes the lock (https), the name, and the hidden door — your paths and queries travel unchanged.</div>`,
+          "Read left to right like a postal address. Port: Express picks 3000, FastAPI 8000. Query params return in the project extras (?done=true is the filtering stretch goal). Protocol slide comes soon — promise it now.",
+        ),
+        /* 5 · Journey (interactive) */
+        S(
+          CH.F,
+          "Journey of a request",
+          "One second, step by step",
+          "You type flyrank.ai and press Enter — what happens?",
+          `
+  <div class="jstage" id="jstage">
+    <div class="jnode"><div class="em">🧑‍💻</div><div class="nm">You — the client</div></div>
+    <div class="jnode"><div class="em">📖</div><div class="nm">DNS phonebook</div></div>
+    <div class="jnode"><div class="em">✉️</div><div class="nm">Request travels</div></div>
+    <div class="jnode"><div class="em">⚙️</div><div class="nm">Server works</div></div>
+    <div class="jnode"><div class="em">🧑‍💻</div><div class="nm">Back to the client</div></div>
+  </div>
+  <div class="infobox" id="jmsg"><b>Press "Next step"</b> to run the journey.</div>
+  <div class="row"><button class="btn" id="jnext">Next step →</button><button class="btn ghost" id="jreset">Restart</button></div>
+  <p class="bl"><b>The client starts the loop and the client ends it</b> — all of it usually in under one second.</p>`,
+          "Walk it slowly — the slow-motion replay of one second. DNS = phonebook, one sentence only. Step 4 gets its own slide soon — promise that now.",
+        ),
+        /* 6 · Where servers live */
+        S(
+          CH.F,
+          "Where servers live",
+          "Geography",
+          "Where does a server actually live?",
+          `
+  <div class="cards c3">
+    <div class="card hl"><div class="ico">💻</div><h3 class="g">Your laptop — localhost</h3><p>While you build: the server runs on YOUR machine, door 3000. Only you can reach it. This is the project's home.</p></div>
+    <div class="card"><div class="ico">🏢</div><h3>A data center</h3><p>Real servers: buildings full of computers that never sleep, with fast internet and backup power.</p></div>
+    <div class="card"><div class="ico">☁️</div><h3>The cloud</h3><p>Renting machines in someone else's data center — AWS, Google Cloud, Azure. Same computers, no building to own.</p></div>
+  </div>
+  <p class="bl"><b>"Deploying" = moving your program from the first card to the others.</b> The project stays on localhost — that's normal; it's how every backend developer works all day.</p>`,
+          "Kills the 'is localhost real programming?' doubt early. Deployment is a later concern.",
+        ),
+        /* 7 · Cloud */
+        S(
+          CH.F,
+          "The cloud",
+          "Renting computers",
+          "The cloud — computers you rent, not own",
+          `
+  <div class="cards c2">
+    <div class="card hl"><div class="ico">⚡</div><h3 class="g">The electricity model</h3><p>You don't build a power plant to turn on a lamp — you plug into the grid and pay for what you use.<br><br>The cloud is the same idea for computers: plug into a data center over the internet, pay by the minute.</p></div>
+    <div>
+      <div class="card" style="margin-bottom:10px;"><h3 class="g" style="font-size:12px;">HOW IT WORKS</h3><p>One huge physical machine is split into many <i>virtual</i> servers. Click a button — yours is ready in seconds, anywhere on Earth.</p></div>
+      <div class="card" style="margin-bottom:10px;"><h3 class="g" style="font-size:12px;">WHY IT MATTERS</h3><p>Start with one tiny server, grow to millions of users — without ever buying hardware. Most of the internet runs this way.</p></div>
+      <div class="card"><h3 class="g" style="font-size:12px;">WHO RUNS IT</h3><p>AWS, Google Cloud, Microsoft Azure. They handle buildings, power, cooling, security. You bring the code.</p></div>
+    </div>
+  </div>
+  <div class="strip">💼 <b>Whole careers live here:</b> Cloud Engineer · DevOps Engineer · SRE · Cloud Architect. Map + starting points: the Cloud 101 guide.</div>
+  <p class="bl"><b>For now, just know it exists.</b> The project stays on localhost — and cloud free tiers ask for credit cards, so for now: read, watch, don't sign up. This project stays $0.</p>`,
+          "Utility analogy is the whole slide. Roles: Cloud Engineer builds there, DevOps automates the path, SRE keeps it alive at 3am. Say the credit-card caveat OUT LOUD.",
+        ),
+        /* 8 · HTTP protocol */
+        S(
+          CH.L,
+          "HTTP — the protocol",
+          "The rules of the road",
+          "HTTP — the protocol the web speaks",
+          `
+  <div class="cards c2">
+    <div class="card hl"><div class="ico">📖</div><h3 class="g">What is a protocol?</h3><p>When two strangers talk, they follow shared rules: greet, take turns, say goodbye.<br><br>A protocol is exactly that — conversation rules, <b>written down</b> — so any two computers can understand each other, with no introductions needed.</p></div>
+    <div>
+      <div class="card" style="margin-bottom:10px;"><h3 class="g" style="font-size:12px;">HTTP</h3><p>HyperText Transfer Protocol — the web's rule book: how a request must look, how a response must look, what the codes mean.</p></div>
+      <div class="card" style="margin-bottom:10px;"><h3 class="g" style="font-size:12px;">WHY IT WORKS</h3><p>Everyone follows the same rules — so a phone in Brazil can talk to a server in Japan, first try, every time.</p></div>
+      <div class="card"><h3 class="g" style="font-size:12px;">HTTPS</h3><p>The same rules inside a locked envelope — everything encrypted on the way. That's the lock icon in your browser.</p></div>
+    </div>
+  </div>
+  <div class="strip"><b>Other jobs, other protocols:</b> email travels over SMTP, files over FTP, DNS has its own. The web — and your API — speak HTTP.</div>
+  <p class="bl"><b>Everything on the next slides — requests, responses, status codes —</b> <span class="g">is just HTTP's rule book, read page by page.</span></p>`,
+          "The hinge of the deck. Define protocol BEFORE the letters. HTTPS = same rules + encryption; plain http is fine on localhost. If asked 'is GraphQL a protocol?' → no, it rides on top of HTTP .",
+        ),
+        /* 9 · Inside a request */
+        S(
+          CH.L,
+          "Inside a request",
+          "Page one of the rule book",
+          "Inside a request",
+          `
+  <div class="cards c2">
+    <div class="ink mono"><span class="ok">GET /tasks HTTP/1.1</span>
+Host: localhost:3000
+Accept: application/json
+
+<span class="dim">(no body — GET only asks)</span></div>
+    <div>
+      <div class="card" style="margin-bottom:8px;"><p><b class="ok">METHOD</b> — the verb: what you want done (GET = "give me")</p></div>
+      <div class="card" style="margin-bottom:8px;"><p><b class="ok">PATH</b> — the address on the envelope: which thing you want</p></div>
+      <div class="card" style="margin-bottom:8px;"><p><b class="ok">HEADERS</b> — notes on the envelope: extra info about the ask</p></div>
+      <div class="card"><p><b class="ok">BODY</b> — the message inside: the JSON of a new task in a POST</p></div>
+    </div>
+  </div>
+  <div class="strip"><b>Say it out loud:</b> <i>"Dear localhost, door 3000 — please GET me /tasks. I'd like the answer in JSON. Thanks."</i></div>
+  <p class="bl"><b>A request is just structured text.</b> No magic — you could write one by hand.</p>`,
+          "Read the request out loud as a letter — it lands. Every part maps to the envelope.",
+        ),
+        /* 10 · Inside the server */
+        S(
+          CH.L,
+          "Inside the server",
+          "Step four, zoomed in",
+          "Inside the server — what “it works” means",
+          `
+  <div class="arrowflow">
+    <div class="pill mono" style="padding:10px 14px; font-weight:700; color:var(--acc);">GET /tasks/3</div>
+    <div class="ar">→</div>
+    <div class="card" style="min-width:230px;"><h3 style="font-size:12px;">1 · the framework matches a route</h3>
+      <p class="mono" style="line-height:1.9; font-size:12px;"><span class="dim">GET  /</span><br><span class="dim">GET  /health</span><br><span class="dim">GET  /tasks</span><br><span class="ok" style="font-weight:700;">GET  /tasks/:id  ✓</span><br><span class="dim">POST /tasks</span></p></div>
+    <div class="ar">→</div>
+    <div style="min-width:230px;">
+      <div class="card" style="margin-bottom:8px;"><h3 style="font-size:12px;">2 · your handler runs</h3><p class="cap">find the task with id 3 in the list</p></div>
+      <div class="ink mono" style="margin-bottom:8px; padding:9px 12px;">found → <span class="ok">200 + JSON</span></div>
+      <div class="ink mono" style="padding:9px 12px;">missing → <span class="bad">404 + error</span></div>
+    </div>
+  </div>
+  <p style="text-align:center; font-size:13px; margin-top:4px;"><b>3 · a response is built and sent back</b></p>
+  <div class="strip">The framework (Express / FastAPI) does the matching — <b>you write the handlers. That's the ~100 lines of this project.</b></div>`,
+          "The promised zoom into 'the server works'. Route = endpoint definition in code. This slide is their code, drawn before they write it.",
+        ),
+        /* 11 · Inside a response */
+        S(
+          CH.L,
+          "Inside a response",
+          "The reply",
+          "Inside a response",
+          `
+  <div class="cards c2">
+    <div class="ink mono"><span class="ok">HTTP/1.1 200 OK</span>
+Content-Type: application/json
+
+{ "id": 3,
+  "title": "Buy milk", "done": false }</div>
+    <div>
+      <div class="card" style="margin-bottom:8px;"><p><b class="ok">STATUS</b> — how it went: one number says success or failure</p></div>
+      <div class="card" style="margin-bottom:8px;"><p><b class="ok">HEADERS</b> — what's in the package: format, size, rules</p></div>
+      <div class="card" style="margin-bottom:8px;"><p><b class="ok">BODY</b> — the actual content: a page (HTML) or data (JSON)</p></div>
+      <div class="card"><p>Request + response = <b class="ok">one loop.</b> That loop is the whole web.</p></div>
+    </div>
+  </div>
+  <p class="bl"><b>Your job as a backend developer:</b> <span class="g">write the code that turns each request into the right response.</span></p>`,
+          "Land the bottom sentence hard — it defines the job. Body = a task object: id/title/done, the project's exact shape.",
+        ),
+        /* 12 · Status codes */
+        S(
+          CH.L,
+          "Status codes",
+          "How did it go?",
+          "Status codes",
+          `
+  <div class="cards c4">
+    <div class="card" style="text-align:center;"><div class="big ok">2xx</div><h3>All good</h3><p class="cap">200 OK · 201 Created · 204 No Content</p></div>
+    <div class="card" style="text-align:center;"><div class="big dim">3xx</div><h3>Go elsewhere</h3><p class="cap">301 Moved Permanently</p></div>
+    <div class="card" style="text-align:center;"><div class="big mid">4xx</div><h3>Client's mistake</h3><p class="cap">400 Bad Request · 404 Not Found</p></div>
+    <div class="card" style="text-align:center;"><div class="big bad">5xx</div><h3>Server's mistake</h3><p class="cap">500 Internal Server Error</p></div>
+  </div>
+  <div class="strip mono" style="font-size:12.5px;"><b style="font-family:'Segoe UI'">THE PROJECT'S CONTRACT — </b><span class="ok">200</span> read · <span class="ok">201</span> created · <span class="ok">204</span> deleted (empty body) · <span class="mid">400</span> bad body · <span class="mid">404</span> unknown id — every error with a JSON message</div>
+  <p class="bl">First digit = who's talking. Bookmark MDN's status code list — you'll pick codes in every stage.</p>`,
+          "First digit tells who erred: 4xx the asker, 5xx the answerer. The contract strip IS the project's acceptance checklist. 204 = success, nothing to say (DELETE).",
+        ),
+        /* 13 · Dev tools */
+        S(
+          CH.T,
+          "Dev tools",
+          "Your x-ray glasses",
+          "Dev tools",
+          `
+  <p class="sub">Built into every browser, free, already installed. Right-click any page → Inspect (or press F12).</p>
+  <div class="cards c3">
+    <div class="card"><div class="ico">🧩</div><h3>Elements</h3><p>The page's skeleton — see and edit the HTML live. Change a headline on any website (only you see it).</p></div>
+    <div class="card"><div class="ico">🖥️</div><h3>Console</h3><p>The page's logbook — errors and <span class="mono">console.log()</span> messages appear here. First stop when something breaks.</p></div>
+    <div class="card hl"><div class="ico">📡</div><h3 class="g">Network</h3><p>Every request the page makes, live — the star here. One row = one request-response loop.</p></div>
+  </div>
+  <p class="bl">Dedicated companion guide: <span class="g">"Dev tools 101 — Elements, Console, Network"</span> — with practice exercises for all three tabs.</p>`,
+          "Now that they can READ the loop, hand them the x-ray glasses. Quick teasers: change a headline in Elements, one console.log. Network gets the full demo next slide.",
+        ),
+        /* 14 · Demo 1 */
+        S(
+          CH.T,
+          "The Network tab",
+          "Dev tools in action",
+          `The Network tab`,
+          `
+  <div class="cards c2">
+    <div class="card"><h3 class="g">Try this later:</h3><p style="line-height:2;">› Open wikipedia.org<br>› Right-click → Inspect (F12)<br>› Open the "Network" tab<br>› Refresh — watch the flood<br>› Click one row — see the loop</p></div>
+    <div class="ink mono" style="font-size:12px; line-height:2;"><span class="dim">Name                   Status   Type</span>
+<span style="border-bottom:1px solid var(--card2); display:block;"></span>wikipedia.org          <span class="ok">200</span>      document
+main.css               <span class="ok">200</span>      stylesheet
+wiki-logo.png          <span class="ok">200</span>      image
+<span class="ok">api/featured-article   200      fetch / json</span>
+<span class="bad">retired-page.html      404      document</span></div>
+  </div>
+  <p class="bl"><b>One page = dozens of loops:</b> the document, every style file, every image, and the data requests (fetch) — each with its own status code. <span class="g">And now you can read every single one.</span></p>`,
+          "The payoff — every column is now a word they know. Method GET (slide 9), status 200 (slide 12), response body (the HTML). Filter by Img then Fetch/XHR. Find a 404 and ask chat: whose mistake? Fallback: this panel is the mock.",
+        ),
+        /* 15 · Four verbs */
+        S(
+          CH.A,
+          "Four verbs · CRUD",
+          "The verbs",
+          "Four verbs run the entire web",
+          `
+  <div class="cards c4">
+    <div class="card" style="text-align:center;"><h3 class="g mono">GET</h3><p><b>Read</b></p><p class="cap"><i>"show me the tasks"</i></p><div class="pill mono" style="margin-top:8px;">GET /tasks</div><p class="ok mono" style="margin-top:6px;">→ 200</p></div>
+    <div class="card" style="text-align:center;"><h3 class="g mono">POST</h3><p><b>Create</b></p><p class="cap"><i>"add a new task"</i></p><div class="pill mono" style="margin-top:8px;">POST /tasks</div><p class="ok mono" style="margin-top:6px;">→ 201</p></div>
+    <div class="card" style="text-align:center;"><h3 class="g mono">PUT</h3><p><b>Update</b></p><p class="cap"><i>"change task 3"</i></p><div class="pill mono" style="margin-top:8px;">PUT /tasks/3</div><p class="ok mono" style="margin-top:6px;">→ 200</p></div>
+    <div class="card" style="text-align:center;"><h3 class="g mono">DELETE</h3><p><b>Delete</b></p><p class="cap"><i>"remove task 3"</i></p><div class="pill mono" style="margin-top:8px;">DELETE /tasks/3</div><p class="ok mono" style="margin-top:6px;">→ 204</p></div>
+  </div>
+  <div class="strip">Create · Read · Update · Delete — together: <b>CRUD</b>. Path + method = an <b>endpoint</b>. <span class="mono">GET /tasks</span> and <span class="mono">POST /tasks</span> are two different doors.</div>`,
+          "Same path, different verb = different endpoint — the project's 'big idea in 60 seconds'. PATCH ('change a part') exists — resources cover it.",
+        ),
+        /* 16 · Validation */
+        S(
+          CH.A,
+          "Never trust the client",
+          "The first business rule",
+          "The server never trusts the client",
+          `
+  <p class="sub">Clients WILL send garbage — by accident or on purpose. Checking before trusting is called validation.</p>
+  <div class="cards c2">
+    <div class="card hl"><p class="mono" style="line-height:1.9;"><b>POST /tasks</b><br>{ "title": "Buy milk" }<br><span style="border-bottom:1px solid var(--card2); display:block; margin:6px 0;"></span><b class="ok">HTTP/1.1 201 Created</b><br><span class="dim">{ "id": 4, "title": "Buy milk", "done": false }</span></p></div>
+    <div class="card err"><p class="mono" style="line-height:1.9;"><b>POST /tasks</b><br>{ }<br><span style="border-bottom:1px solid var(--card2); display:block; margin:6px 0;"></span><b class="bad">HTTP/1.1 400 Bad Request</b><br><span class="dim">{ "error": "title is required" }</span></p></div>
+  </div>
+  <div class="strip">🛡️ <b>Milestone 3 of the project:</b> missing or empty title → 400 with a JSON error saying what's wrong. Your first line of defense — every backend rule you'll ever write starts like this.</div>`,
+          "Same endpoint, two fates — the only difference is what the client sent. Validation isn't rudeness; it's the API keeping its promises. This instinct later scales to auth & security.",
+        ),
+        /* 17 · Playground (interactive bonus) */
+        S(
+          CH.A,
+          "Playground — try it",
+          "Interactive",
+          "Try the loop yourself",
+          `
+  <p class="sub">This pretend server follows the project's exact rules — same endpoints, status codes and validation. Pick a verb, pick a target, send.</p>
+  <div class="row" id="verbs">
+    <button class="verb on" data-v="GET">GET</button><button class="verb" data-v="POST">POST</button><button class="verb" data-v="PUT">PUT</button><button class="verb" data-v="DELETE">DELETE</button>
+    <select id="target"></select>
+    <input type="text" id="titleIn" placeholder="task title…" style="display:none; flex:1; min-width:130px;">
+    <button class="btn" id="send">Send ➤</button>
+  </div>
+  <div class="panes">
+    <div class="pane mono" id="reqPane"><h4>The request — what you send</h4><span class="dim">Waiting…</span></div>
+    <div class="pane mono" id="resPane"><h4>The response — what comes back</h4><span class="dim">Waiting…</span></div>
+  </div>
+  <div class="strip" id="phint"><b>Try the full cycle:</b> GET /health · GET the list · POST a task (then with an <i>empty title</i> — your first 400) · PUT · DELETE (note the 204) · GET /tasks/99 for a 404.</div>`,
+          "Optional live segment or a warm-up before building. Everything it returns is the project's acceptance contract. If short on time, skip — it lives in the companion page too.",
+        ),
+        /* 18 · APIs */
+        S(
+          CH.A,
+          "APIs",
+          "The web for programs",
+          "APIs",
+          `
+  <div class="card" style="margin-bottom:10px;"><div class="arrowflow" style="justify-content:flex-start;">
+    <span class="ico">🖥️</span><b>A browser</b><span class="ar">→</span><span class="dim">asks</span><span class="ico">🗄️</span><span class="ar">→</span><b>a page (HTML)</b><span class="dim"> — for humans to read</span></div></div>
+  <div class="card hl" style="margin-bottom:10px;"><div class="arrowflow" style="justify-content:flex-start;">
+    <span class="ico">📱</span><b>An app / a program</b><span class="ar">→</span><span class="dim">asks</span><span class="ico">🗄️</span><span class="ar">→</span><b class="ok">data (JSON)</b><span class="dim"> — for programs to use</span></div></div>
+  <div class="strip"><b>Example — your weather app:</b> it never opens a website. It asks api.weather.com, gets numbers back, and draws them itself.</div>
+  <p class="bl"><b>A website is for people. An API is for programs.</b> Same loop — different answer. <span class="g">This project builds one.</span></p>`,
+          "API = 'a website whose visitors are programs' — skip the acronym expansion. Their phone talks to APIs hundreds of times a day.",
+        ),
+        /* 19 · JSON */
+        S(
+          CH.A,
+          "JSON",
+          "The data format",
+          "JSON — the language APIs speak",
+          `
+  <div class="cards c2">
+    <div class="ink mono" style="font-size:15px; line-height:2;">{
+  "id": 3,
+  <span class="ok">"title": "Buy milk",</span>
+  "done": false
+}</div>
+    <div>
+      <div class="card" style="margin-bottom:8px;"><p>"key": value pairs — like a form, filled in as text</p></div>
+      <div class="card" style="margin-bottom:8px;"><p>Easy for humans to read, easy for machines to parse</p></div>
+      <div class="card" style="margin-bottom:8px;"><p>Works in every language — JS, Python, anything</p></div>
+      <div class="card"><p>This exact shape is the project's task object</p></div>
+    </div>
+  </div>
+  <p class="bl"><b>That's one task, described in text.</b> A list of tasks? Wrap them in [ square brackets ]. That's 90% of JSON.</p>`,
+          "Read it out loud: 'task 3, Buy milk, not done'. If they can read that, they know JSON. MDN 'Working with JSON' = the one tutorial they need.",
+        ),
+        /* 20 · Demo 2 */
+        S(
+          CH.A,
+          "Call a real API",
+          "curl & Hoppscotch",
+          `Call a real API — no browser needed`,
+          `
+  <div class="cards c2">
+    <div class="ink mono" style="font-size:12px; line-height:1.9;"><span class="ok">$ curl -i https://jsonplaceholder.typicode.com/todos/1</span>
+
+<span class="ok">HTTP/1.1 200 OK</span>
+<span class="dim">Content-Type: application/json</span>
+
+{
+  "id": 1,
+  "title": "delectus aut autem",
+  "completed": false
+}</div>
+    <div>
+      <div class="card" style="margin-bottom:8px;"><p>⌨️ <b>curl</b> — the professional's tool. <span class="mono">-i</span> shows the status line and headers too.</p></div>
+      <div class="card" style="margin-bottom:8px;"><p>🌐 No terminal? <b>hoppscotch.io</b> — paste the URL, press Send.</p></div>
+      <div class="card"><p>✅ <b>JSONPlaceholder</b> is a free practice API — no signup, can't break it.</p></div>
+    </div>
+  </div>
+  <p class="bl"><b>You just did — by hand — exactly what the weather app does all day.</b> <span class="g">curl -i is also how you'll prove every milestone checkpoint of the project.</span></p>`,
+          "Run the curl with -i from the start. Then /todos/999999 → 404 live. Then hoppscotch.io for the no-terminal crowd. Fallback: this panel shows the output.",
+        ),
+        /* 21 · Swagger */
+        S(
+          CH.A,
+          "Swagger / OpenAPI",
+          "See your API",
+          "Swagger UI — your API as a clickable page",
+          `
+  <div class="cards c2">
+    <div class="ink"><p style="font-weight:700; margin-bottom:2px;">Task API 1.0</p><p class="dim mono" style="font-size:10.5px; margin-bottom:10px;">openapi.json · localhost:3000/docs</p>
+      <div class="card" style="padding:7px 10px; margin-bottom:6px;"><span class="mono" style="background:var(--acc); color:var(--ink); padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700;">GET</span> <span class="mono" style="font-size:12px;">/tasks</span> <span class="ok" style="float:right; font-size:11px;">Try it out ▸</span></div>
+      <div class="card" style="padding:7px 10px; margin-bottom:6px;"><span class="mono" style="background:var(--warn); color:var(--ink); padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700;">POST</span> <span class="mono" style="font-size:12px;">/tasks</span> <span class="ok" style="float:right; font-size:11px;">Try it out ▸</span></div>
+      <div class="card" style="padding:7px 10px; margin-bottom:6px;"><span class="mono" style="background:var(--acc); color:var(--ink); padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700;">GET</span> <span class="mono" style="font-size:12px;">/tasks/{id}</span> <span class="ok" style="float:right; font-size:11px;">Try it out ▸</span></div>
+      <div class="card" style="padding:7px 10px; margin-bottom:6px;"><span class="mono" style="background:var(--blue); color:var(--ink); padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700;">PUT</span> <span class="mono" style="font-size:12px;">/tasks/{id}</span> <span class="ok" style="float:right; font-size:11px;">Try it out ▸</span></div>
+      <div class="card" style="padding:7px 10px;"><span class="mono" style="background:var(--err); color:var(--ink); padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700;">DELETE</span> <span class="mono" style="font-size:12px;">/tasks/{id}</span> <span class="ok" style="float:right; font-size:11px;">Try it out ▸</span></div>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:8px;"><p><b class="ok">OPENAPI</b> — a file that describes your API: every endpoint, input and answer</p></div>
+      <div class="card" style="margin-bottom:8px;"><p><b class="ok">SWAGGER UI</b> — reads that file and becomes interactive docs. "Try it out" sends real requests</p></div>
+      <div class="card" style="margin-bottom:8px;"><p><b class="ok">PYTHON LANE</b> — FastAPI writes it for you: free at <span class="mono">localhost:8000/docs</span></p></div>
+      <div class="card"><p><b class="ok">JS LANE</b> — one package: swagger-ui-express + a small openapi.json you write</p></div>
+    </div>
+  </div>
+  <p class="bl"><b class="g">Milestone 5 of the project:</b> run your whole CRUD cycle in Swagger UI — curl with a friendly face. Screenshot it for your README.</p>`,
+          "The overview-of-all-endpoints slide. OpenAPI = the file, Swagger UI = the viewer. Python gets it free; Express writes a small spec (teaches more). If time: petstore.swagger.io for 30s.",
+        ),
+        /* 22 · GraphQL (interactive) */
+        S(
+          CH.A,
+          "GraphQL vs REST",
+          "Another way to ask",
+          "GraphQL — one door, you choose the answer",
+          `
+  <div class="cards c2">
+    <div>
+      <div class="fields" id="gfields">
+        <label><input type="checkbox" value="id"> id</label>
+        <label><input type="checkbox" value="title" checked> title</label>
+        <label><input type="checkbox" value="done" checked> done</label>
+        <button class="btn" id="gqlBtn" style="margin-left:auto;">POST /graphql ➤</button>
+      </div>
+      <div class="ink mono" id="gqlOut" style="min-height:180px; font-size:12px;"><span class="dim">Tick the fields you want, then send — the answer contains exactly those, nothing more.</span></div>
+    </div>
+    <div>
+      <div class="card hl" style="margin-bottom:10px;"><h3 class="g">REST</h3><p>› many doors — one per thing (/tasks, /tasks/3)<br>› the server decides the answer's shape<br>› <b>what this project builds</b></p></div>
+      <div class="card"><h3>GraphQL</h3><p>› one door for everything (/graphql)<br>› the client picks the exact fields it wants<br>› you'll meet it in some jobs</p></div>
+    </div>
+  </div>
+  <div class="strip"><b>Why it exists:</b> a phone app on slow internet doesn't want the whole task — just the title. GraphQL lets the client say exactly that.</div>
+  <p class="bl"><b>Both ride the same loop — an HTTP request in, JSON out.</b> Learn REST first; GraphQL will feel easy after. <span class="g">And no — GraphQL is not a protocol; it rides on top of HTTP.</span></p>`,
+          "Horizon-widener, not a debate. Expect 'is GraphQL a protocol?' — no, it rides on HTTP (Q&A doc #1). Neither is 'better': REST is the default; GraphQL shines for complex apps/mobile.",
+        ),
+        /* 23 · Project milestones */
+        S(
+          CH.Y,
+          "Project: 7 milestones",
+          "Your turn",
+          "Project: build a CRUD Task API",
+          `
+  <p class="sub">A to-do list API on your machine — ~6–8 hours across 7 small milestones, under 100 lines of code. Commit after every milestone.</p>
+  <div class="cards c4">
+    <div class="card"><h3><span class="ok">0</span> Hello, server</h3><p class="cap">install, start on localhost, see it answer · ~30 min</p></div>
+    <div class="card"><h3><span class="ok">1</span> Front door</h3><p class="cap">GET / describes your API · GET /health says it's alive · ~45 min</p></div>
+    <div class="card"><h3><span class="ok">2</span> Read</h3><p class="cap">GET /tasks + GET /tasks/:id — unknown id → 404 · ~1 h</p></div>
+    <div class="card"><h3><span class="ok">3</span> Create</h3><p class="cap">POST /tasks → 201 · empty title → 400 · ~1 h</p></div>
+    <div class="card"><h3><span class="ok">4</span> Update & Delete</h3><p class="cap">PUT → 200 · DELETE → 204 — full CRUD done · ~1 h</p></div>
+    <div class="card"><h3><span class="ok">5</span> See it</h3><p class="cap">Swagger UI at /docs — run the cycle with buttons · ~1–1.5 h</p></div>
+    <div class="card"><h3><span class="ok">6</span> Publish</h3><p class="cap">GitHub repo + README — ≥6 honest commits · ~1 h</p></div>
+    <div class="card wrn"><h3><span class="mid">★</span> AI rematch</h3><p class="cap">make an AI build it — then review its work (bonus) · ~1 h</p></div>
+  </div>
+  <p class="bl"><b>Every milestone ends with a checkpoint you can prove with curl -i.</b> Only through milestone 3? Push it anyway — a working half beats a broken whole.</p>`,
+          "Walk the pipeline fast and warm — never more than ~15 lines before testing again. AI rematch: build by hand FIRST, then prompt an AI and diff — spec-first thinking planted early.",
+        ),
+        /* 24 · Project rules */
+        S(
+          CH.Y,
+          "Done means…",
+          "The contract",
+          "Done means — acceptance criteria",
+          `
+  <div class="cards c2">
+    <div class="ink mono" style="font-size:12px; line-height:2.1;"><span class="ok" style="letter-spacing:.15em; font-size:10px; font-family:'Segoe UI';">YOUR ENDPOINTS</span>
+<b>GET    /</b>          <span class="dim">what is this API?</span>
+<b>GET    /health</b>    <span class="dim">is it alive?</span>
+<b>GET    /tasks</b>     <span class="dim">list all</span>
+<b>GET    /tasks/:id</b> <span class="dim">one task · 404</span>
+<b>POST   /tasks</b>     <span class="dim">create · 201 · 400</span>
+<b>PUT    /tasks/:id</b> <span class="dim">update · 404 · 400</span>
+<b>DELETE /tasks/:id</b> <span class="dim">remove · 204 · 404</span></div>
+    <div>
+      <div class="card" style="margin-bottom:8px;"><p>🗃️ <b>In-memory only</b> — a list in your code. Restart = data gone. That lesson is why databases exist.</p></div>
+      <div class="card" style="margin-bottom:8px;"><p>🛡️ <b>Status codes are part of the contract:</b> 200 · 201 · 204 · 400 · 404 — every error with a JSON message.</p></div>
+      <div class="card" style="margin-bottom:8px;"><p>🐙 <b>Public GitHub repo</b>, ≥6 commits (one per milestone), README a stranger can run in 5 minutes.</p></div>
+      <div class="card"><p>🤖 <b>Bonus — the AI rematch:</b> write your own prompt, run the AI's code, diff it against yours, write "AI vs me".</p></div>
+    </div>
+  </div>
+  <p class="bl"><b>Pick ONE lane — Express (JS) or FastAPI (Python).</b> <span class="g">Both free, both fully covered in the resources. $0, no credit card, ever.</span></p>`,
+          "The requirements made visual. Seven doors = the whole app. Lane choice: comfortable with JavaScript → Express; Python friendlier → FastAPI (Swagger free). Mention the extras: filtering, search, /stats, the persistence experiment. Close on the loop: client asks, server answers — this project builds the answering side.",
+        ));
+      /* ================= ENGINE ================= */
+      let cur = 0;
+      const stage = document.getElementById("stage"),
+        side = document.getElementById("side");
+      const notesEl = document.getElementById("notes"),
+        bar = document.getElementById("bar"),
+        counter = document.getElementById("counter");
+
+      // build sidebar + slides
+      let lastCh = null,
+        navHtml = "";
+      slides.forEach((s, i) => {
+        if (s.chapter !== lastCh) {
+          navHtml += `<div class="chap">${s.chapter}</div>`;
+          lastCh = s.chapter;
+        }
+        navHtml += `<a href="#" data-i="${i}">${i + 1} · ${s.nav}</a>`;
+        const d = document.createElement("div");
+        d.className = "slide";
+        d.id = "sl" + i;
+        d.innerHTML =
+          `<div class="kick">${s.kick}</div>` +
+          (s.title ? `<h1 class="st">${s.title}</h1>` : "") +
+          s.body;
+        stage.appendChild(d);
+      });
+      side.innerHTML =
+        `<div class="brand"><div class="fr">Fl<span>y</span>Rank<sup style="font-size:9px;"> AI</sup></div><div class="wk">Backend 101 · Task API</div></div>` +
+        navHtml;
+
+      function show(i) {
+        cur = Math.max(0, Math.min(slides.length - 1, i));
+        document
+          .querySelectorAll(".slide")
+          .forEach((el, j) => el.classList.toggle("active", j === cur));
+        document
+          .querySelectorAll("#side a")
+          .forEach((a, j) => a.classList.toggle("on", j === cur));
+        bar.style.width = ((cur + 1) / slides.length) * 100 + "%";
+        counter.textContent = cur + 1 + " / " + slides.length;
+        notesEl.innerHTML = "<b>Notes:</b> " + slides[cur].notes;
+        stage.scrollTop = 0;
+        const on = document.querySelector("#side a.on");
+        if (on) on.scrollIntoView({ block: "nearest" });
+        location.hash = cur + 1;
+      }
+      side.addEventListener("click", (e) => {
+        if (e.target.dataset.i !== undefined) {
+          e.preventDefault();
+          show(+e.target.dataset.i);
+        }
+      });
+      document.getElementById("prev").onclick = () => show(cur - 1);
+      document.getElementById("next").onclick = () => show(cur + 1);
+      document.getElementById("tgSide").onclick = () =>
+        side.classList.toggle("hidden");
+      document.getElementById("tgNotes").onclick = () =>
+        notesEl.classList.toggle("show");
+      document.getElementById("tgFull").onclick = () =>
+        document.fullscreenElement
+          ? document.exitFullscreen()
+          : document.documentElement.requestFullscreen();
+      document.addEventListener("keydown", (e) => {
+        if (["INPUT", "SELECT", "TEXTAREA"].includes(e.target.tagName)) return;
+        if (e.key === "ArrowRight" || e.key === "PageDown" || e.key === " ") {
+          e.preventDefault();
+          show(cur + 1);
+        } else if (e.key === "ArrowLeft" || e.key === "PageUp") {
+          e.preventDefault();
+          show(cur - 1);
+        } else if (e.key === "Home") show(0);
+        else if (e.key === "End") show(slides.length - 1);
+        else if (e.key.toLowerCase() === "n") notesEl.classList.toggle("show");
+        else if (e.key.toLowerCase() === "f")
+          document.getElementById("tgFull").click();
+      });
+      show(parseInt(location.hash.slice(1)) - 1 || 0);
+
+      /* ============ interactive: URL anatomy ============ */
+      const urlInfo = {
+        protocol:
+          "<b>Protocol — the language rules.</b> HTTP is how clients and servers talk; HTTPS is the same with a lock on it (encrypted). Your local server speaks plain http — fine on your own machine.",
+        domain:
+          "<b>Domain — which computer.</b> Usually a name DNS can look up. <b>localhost</b> is special: it means “this machine, right here”. Nobody else can reach your localhost.",
+        port: "<b>Port — which door on that computer.</b> One machine can run many servers, each behind a numbered door. Express uses 3000 by convention, FastAPI 8000.",
+        path: "<b>Path — which thing you want.</b> /tasks/3 = “task number 3”. The 3 is a path parameter — the changing piece your code reads as :id or {id}.",
+        query:
+          "<b>Query — extra options.</b> After the ?: filters and tweaks, like ?done=true = “only finished tasks”. One of the project's stretch goals.",
+      };
+      document.getElementById("urlbox").addEventListener("click", (e) => {
+        const k = e.target.dataset.k;
+        if (!k) return;
+        document
+          .querySelectorAll("#urlbox .seg")
+          .forEach((s) => s.classList.toggle("on", s === e.target));
+        document.getElementById("urlinfo").innerHTML = urlInfo[k];
+      });
+
+      /* ============ interactive: journey ============ */
+      const jsteps = [
+        "<b>1 · The client asks.</b> You type flyrank.ai. Your browser is the client — the one who starts the loop. It prepares a request: <span class='mono'>GET /</span>.",
+        "<b>2 · DNS finds the address.</b> Computers find each other by numbers. DNS is the phonebook: it turns <span class='mono'>flyrank.ai</span> into an IP address like <span class='mono'>203.0.113.7</span>.",
+        "<b>3 · The request travels.</b> A small structured text message crosses your wi-fi and the cables of the internet to reach exactly that server.",
+        "<b>4 · The server works.</b> The framework matches the path to a route, YOUR code runs, and a response is built: a status code plus the content.",
+        "<b>5 · Back to the client.</b> The response returns, the browser reads the HTML and draws the page. Client asks → server answers → client draws. Under a second.",
+      ];
+      let ji = -1;
+      const jnodes = [...document.querySelectorAll(".jnode")];
+      function jr() {
+        jnodes.forEach((n, i) => n.classList.toggle("on", i === ji));
+        document.getElementById("jmsg").innerHTML =
+          ji < 0 ? "<b>Press “Next step”</b> to run the journey." : jsteps[ji];
+        document.getElementById("jnext").textContent =
+          ji >= jsteps.length - 1 ? "Done ✓ (restart?)" : "Next step →";
+      }
+      document.getElementById("jnext").onclick = () => {
+        if (ji < jsteps.length - 1) {
+          ji++;
+          jr();
+        }
+      };
+      document.getElementById("jreset").onclick = () => {
+        ji = -1;
+        jr();
+      };
+
+      /* ============ interactive: playground ============ */
+      let tasks = [
+        { id: 1, title: "Read the Backend 101 deck", done: true },
+        { id: 2, title: "Read MDN: How the web works", done: false },
+      ];
+      let nextId = 3,
+        verb = "GET";
+      const target = document.getElementById("target"),
+        titleIn = document.getElementById("titleIn");
+      function refreshT() {
+        target.innerHTML = "";
+        const o = [];
+        if (verb === "GET") {
+          o.push(
+            ["/", "/ — the front door"],
+            ["/health", "/health — is it alive?"],
+            ["/tasks", "/tasks — the whole list"],
+          );
+          tasks.forEach((t) =>
+            o.push([
+              "/tasks/" + t.id,
+              "/tasks/" + t.id + " — “" + t.title + "”",
+            ]),
+          );
+          o.push(["/tasks/99", "/tasks/99 — (does it exist?)"]);
+        }
+        if (verb === "POST") o.push(["/tasks", "/tasks — add a new task"]);
+        if (verb === "PUT" || verb === "DELETE") {
+          tasks.forEach((t) =>
+            o.push([
+              "/tasks/" + t.id,
+              "/tasks/" + t.id + " — “" + t.title + "”",
+            ]),
+          );
+          o.push(["/tasks/99", "/tasks/99 — (does it exist?)"]);
+        }
+        o.forEach((x) => {
+          const e = document.createElement("option");
+          e.value = x[0];
+          e.textContent = x[1];
+          target.appendChild(e);
+        });
+        titleIn.style.display =
+          verb === "POST" || verb === "PUT" ? "block" : "none";
+        titleIn.placeholder = "title… (leave empty to meet a 400)";
+      }
+      document.getElementById("verbs").addEventListener("click", (e) => {
+        if (!e.target.dataset.v) return;
+        verb = e.target.dataset.v;
+        document
+          .querySelectorAll(".verb")
+          .forEach((b) => b.classList.toggle("on", b === e.target));
+        refreshT();
+      });
+      refreshT();
+      document.getElementById("send").onclick = () => {
+        const path = target.value,
+          body = titleIn.value.trim();
+        let req = [
+          `<span class="ok">${verb} ${path} HTTP/1.1</span>`,
+          "Host: localhost:3000",
+          "Accept: application/json",
+        ];
+        let payload = null;
+        if (verb === "POST" || verb === "PUT") {
+          payload = body ? { title: body } : {};
+          req.push(
+            "Content-Type: application/json",
+            "",
+            esc(JSON.stringify(payload, null, 2)),
+          );
+        }
+        document.getElementById("reqPane").innerHTML =
+          "<h4>The request — what you send</h4>" + req.join("\n");
+        const id = path.startsWith("/tasks/")
+          ? parseInt(path.split("/")[2])
+          : null;
+        const found = id !== null ? tasks.find((t) => t.id === id) : null;
+        let status,
+          out,
+          expl,
+          noBody = false;
+        if (verb === "GET" && path === "/") {
+          status = "200 OK";
+          out = { name: "Task API", version: "1.0", endpoints: ["/tasks"] };
+          expl = "200 — the front door describes the API (milestone 1).";
+        } else if (verb === "GET" && path === "/health") {
+          status = "200 OK";
+          out = { status: "ok" };
+          expl = "200 — alive. Real companies check this endpoint all day.";
+        } else if (verb === "GET" && path === "/tasks") {
+          status = "200 OK";
+          out = tasks;
+          expl = "200 — the whole list.";
+        } else if (verb === "GET") {
+          if (found) {
+            status = "200 OK";
+            out = found;
+            expl = "200 — found it.";
+          } else {
+            status = "404 Not Found";
+            out = { error: "Task " + id + " not found" };
+            expl =
+              "404 — never an empty 200 for something that doesn't exist (milestone 2 rule).";
+          }
+        } else if (verb === "POST") {
+          if (!payload.title) {
+            status = "400 Bad Request";
+            out = { error: "title is required" };
+            expl =
+              "400 — the server never trusts the client (milestone 3 validation).";
+          } else {
+            const t = { id: nextId++, title: payload.title, done: false };
+            tasks.push(t);
+            status = "201 Created";
+            out = t;
+            expl =
+              "201 — created! Something NEW exists; note the id the server chose.";
+          }
+        } else if (verb === "PUT") {
+          if (!found) {
+            status = "404 Not Found";
+            out = { error: "Task " + id + " not found" };
+            expl = "404 — can't update what doesn't exist.";
+          } else if (!payload.title) {
+            status = "400 Bad Request";
+            out = { error: "title is required" };
+            expl = "400 — same validation as POST (milestone 4).";
+          } else {
+            found.title = payload.title;
+            status = "200 OK";
+            out = found;
+            expl =
+              "200 — updated. Same address, different verb, different action.";
+          }
+        } else {
+          if (found) {
+            tasks = tasks.filter((t) => t.id !== id);
+            status = "204 No Content";
+            noBody = true;
+            expl =
+              "204 — success, nothing to say. Empty body — the project's DELETE rule.";
+          } else {
+            status = "404 Not Found";
+            out = { error: "Task " + id + " not found" };
+            expl = "404 — already gone (or never existed).";
+          }
+        }
+        const cls = status.startsWith("2") ? "ok" : "bad";
+        document.getElementById("resPane").innerHTML =
+          "<h4>The response — what comes back</h4>" +
+          `<span class="${cls}">HTTP/1.1 ${status}</span>\n` +
+          (noBody
+            ? `<span class="dim">(no body — 204 means “done, nothing to show”)</span>`
+            : "Content-Type: application/json\n\n" +
+              esc(JSON.stringify(out, null, 2)));
+        document.getElementById("phint").innerHTML =
+          `<b>${status}:</b> ${expl}`;
+        titleIn.value = "";
+        refreshT();
+      };
+
+      /* ============ interactive: GraphQL ============ */
+      const demoTask = {
+        id: 3,
+        title: "Buy milk",
+        done: false,
+        createdAt: "2026-07-14T09:00:00Z",
+        owner: "you",
+      };
+      document.getElementById("gqlBtn").onclick = () => {
+        const picked = [
+          ...document.querySelectorAll("#gfields input:checked"),
+        ].map((i) => i.value);
+        const out = document.getElementById("gqlOut");
+        if (!picked.length) {
+          out.innerHTML =
+            '<span class="mid">Pick at least one field — GraphQL requires you to say what you want.</span>';
+          return;
+        }
+        const q = `query {\n  task(id: 3) { ${picked.join(" ")} }\n}`;
+        const res = {};
+        picked.forEach((k) => (res[k] = demoTask[k]));
+        out.innerHTML =
+          `<span class="dim">${esc(q)}</span>\n\n<span class="ok">HTTP/1.1 200 OK</span>\n\n` +
+          esc(JSON.stringify({ data: { task: res } }, null, 2)) +
+          `\n\n<span class="dim">Exactly the fields you asked for — nothing more.</span>`;
+      };
+    </script>
+  
+<style>
+  .card p{font-size:14.5px;} .sub{font-size:16px;} .strip{font-size:15px;} .bl{font-size:15px;}
+  .ink{font-size:14.5px;} .card h3{font-size:16px;} .card .cap{font-size:13px;}
+  .pane{font-size:13.5px;} .slide{max-width:1220px;} h1.st{font-size:clamp(26px,3.4vw,40px);}
+  .infobox{font-size:15px;} .jnode .nm{font-size:12.5px;} #side a{font-size:13px;}
+</style>
+<script>
+/* patch: real-world URL segments, unified highlight, zoom controls */
+Object.assign(urlInfo, {
+  rprotocol: "<b>https — the locked envelope.</b> The same HTTP rules, encrypted on the way. Real websites always use it — this is the lock icon in your browser.",
+  rdomain: "<b>flyrank.ai — a real name.</b> Anyone's browser can ask DNS about it, and it points to a server with a public address. That's the whole difference from localhost.",
+  rport: "<b>:443 — the hidden door.</b> https always uses door 443, so browsers don't even show it (plain http uses 80). Your local server needs :3000 spelled out because it's a non-standard door.",
+  rpath: "<b>The path doesn't change when you deploy.</b> /tasks/3 means \"task number 3\" on localhost and on flyrank.ai alike — same doors, new home.",
+  rquery: "<b>Queries work the same everywhere.</b> ?done=true = \"only finished tasks\". Filters and options, not addresses."
+});
+document.addEventListener("click", (e) => {
+  const el = e.target.closest(".seg");
+  if (!el || !el.dataset.k || !urlInfo[el.dataset.k]) return;
+  document.querySelectorAll(".seg").forEach((s) => s.classList.toggle("on", s === el));
+  const info = document.getElementById("urlinfo");
+  if (info) info.innerHTML = urlInfo[el.dataset.k];
+});
+let zoom = parseFloat(localStorage.getItem("w2zoom")) || 1.15;
+function setZoom(z) {
+  zoom = Math.min(2, Math.max(0.7, Math.round(z * 20) / 20));
+  document.getElementById("stage").style.zoom = zoom;
+  localStorage.setItem("w2zoom", zoom);
+}
+const zwrap = document.getElementById("navbtns");
+[["+", 0.1], ["−", -0.1]].forEach(([txt, d]) => {
+  const b = document.createElement("button");
+  b.textContent = txt; b.title = "Zoom (also + / - keys)";
+  b.onclick = () => setZoom(zoom + d);
+  zwrap.insertBefore(b, zwrap.firstChild);
+});
+setZoom(zoom);
+document.addEventListener("keydown", (e) => {
+  if (["INPUT", "SELECT", "TEXTAREA"].includes(e.target.tagName)) return;
+  if (e.key === "+" || e.key === "=") setZoom(zoom + 0.1);
+  else if (e.key === "-" || e.key === "_") setZoom(zoom - 0.1);
+});
+</script>
+
+<style>
+  #resbtn{position:relative;}
+  #resbtn .cnt{display:inline-block; background:var(--acc); color:var(--ink); border-radius:9px; font-size:10px; font-weight:800; padding:1px 7px; margin-left:6px; vertical-align:1px;}
+  #resdrawer{position:fixed; top:0; right:0; height:100%; width:400px; max-width:92vw; background:var(--ink); border-left:1px solid var(--card2); z-index:20; transform:translateX(105%); transition:transform .28s ease; display:flex; flex-direction:column; box-shadow:-12px 0 30px rgba(0,0,0,.35);}
+  #resdrawer.open{transform:translateX(0);}
+  #resdrawer .rhead{display:flex; align-items:center; gap:10px; padding:16px 18px 12px; border-bottom:1px solid var(--card2);}
+  #resdrawer .rhead .rk{color:var(--acc); font-size:10px; letter-spacing:.22em; text-transform:uppercase; font-weight:700;}
+  #resdrawer .rhead .rt{font-size:15px; font-weight:700; color:#fff;}
+  #resdrawer .rhead button{margin-left:auto; background:var(--card2); color:var(--txt); width:30px; height:30px; border-radius:50%; font-size:14px;}
+  #resbody{overflow-y:auto; padding:12px 16px 24px; flex:1;}
+  .ritem{display:block; background:var(--card); border-radius:10px; padding:12px 14px; margin-bottom:10px; text-decoration:none; border:1.5px solid transparent; transition:border-color .15s;}
+  .ritem:hover{border-color:var(--acc);}
+  .ritem .rt1{font-size:14px; font-weight:700; color:var(--txt); margin-bottom:3px;}
+  .ritem .rt1 .ext{color:var(--acc); font-size:11px; margin-left:5px;}
+  .ritem .rm{font-size:12px; color:var(--mut); line-height:1.5;}
+  .rleg{font-size:11.5px; color:var(--mut); padding:0 2px 10px; line-height:1.6;}
+  .rempty{color:var(--mut); font-size:13px; padding:8px 2px;}
+</style>
+<script>
+/* ===== per-slide resources drawer ===== */
+const RES = {
+  1: [
+    ["g","MDN — How the web works","https://developer.mozilla.org/en-US/docs/Learn_web_development/Getting_started/Web_standards/How_the_web_works","Article · ~10 min — the single best plain-language pre-read for this whole deck. Read it again afterwards; it clicks twice as hard."],
+    ["g","roadmap.sh — Backend Developer","https://roadmap.sh/backend","Interactive map — where everything in this project fits in the wider backend world. Look, don't panic."]
+  ],
+  2: [
+    ["g","MDN — How the web works","https://developer.mozilla.org/en-US/docs/Learn_web_development/Getting_started/Web_standards/How_the_web_works","Article · ~10 min — clients and servers in Mozilla's words, written for absolute beginners."],
+    ["y","MDN — Client-Server overview","https://developer.mozilla.org/en-US/docs/Learn_web_development/Extensions/Server-side/First_steps/Client-Server_overview","Article · ~20 min — a deeper pass on exactly this slide: what each side does, with real request examples."],
+    ["y","MDN — Introduction to the server side","https://developer.mozilla.org/en-US/docs/Learn_web_development/Extensions/Server-side/First_steps/Introduction","Article · ~15 min — what server-side programming is for, and why every serious app has one."]
+  ],
+  3: [
+    ["g","MDN — What is a web server?","https://developer.mozilla.org/en-US/docs/Learn_web_development/Howto/Web_mechanics/What_is_a_web_server","Article · ~10 min — hardware vs software meaning of 'server', static vs dynamic — the backend half of this slide."],
+    ["y","roadmap.sh — Frontend Developer","https://roadmap.sh/frontend","Interactive map — curious about the other half? This is its whole world; nice for perspective."]
+  ],
+  4: [
+    ["g","MDN — What is a URL?","https://developer.mozilla.org/en-US/docs/Learn_web_development/Howto/Web_mechanics/What_is_a_URL","Article · ~10 min — every part of this slide, with more examples (anchors, default ports, relative URLs)."],
+    ["y","restfulapi.net — Resource naming","https://restfulapi.net/resource-naming/","Guide — how professionals choose paths like /tasks/3. Read after your API works, then improve yours."]
+  ],
+  5: [
+    ["g","How DNS works (comic)","https://howdns.works/","Web comic · ~15 min — the phonebook step of this journey as a genuinely fun comic. The best DNS explainer on the internet."],
+    ["y","MDN — How does the Internet work?","https://developer.mozilla.org/en-US/docs/Learn_web_development/Howto/Web_mechanics/How_does_the_Internet_work","Article · ~10 min — one level below the web: the cables and networks the request travels on."],
+    ["r","What happens when you type google.com and press Enter","https://github.com/alex/what-happens-when","GitHub repo — this slide answered in extreme depth (keyboard → electrons → pixels). Skim now, re-read at the end of the program and be amazed."]
+  ],
+  6: [
+    ["g","MDN — What is a web server?","https://developer.mozilla.org/en-US/docs/Learn_web_development/Howto/Web_mechanics/What_is_a_web_server","Article · ~10 min — what actually runs on those machines, wherever they live."],
+    ["r","Inside a Google data center — 360° tour","https://www.youtube.com/watch?v=zDAYZU4A3w0","Video · ~8 min — walk through the buildings the cloud lives in. Makes it physical instead of magical."]
+  ],
+  7: [
+    ["g","Cloudflare — What is the cloud?","https://www.cloudflare.com/learning/cloud/what-is-the-cloud/","Article · ~10 min — the best plain-language, vendor-neutral explanation. If you read one thing about the cloud, read this."],
+    ["g","Fireship — Cloud Computing in 100 Seconds","https://www.youtube.com/watch?v=M988_fsOSWo","Video · ~2 min — the whole idea, correctly, in under two minutes."],
+    ["y","AWS — What is cloud computing?","https://aws.amazon.com/what-is-cloud-computing/","Article · ~10 min — the biggest provider's own intro; good for the vocabulary job postings use."],
+    ["y","roadmap.sh — DevOps","https://roadmap.sh/devops","Interactive map — the career paths from this slide (Cloud Engineer, DevOps, SRE), charted."]
+  ],
+  8: [
+    ["g","MDN — Overview of HTTP","https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Overview","Article · ~15 min — the reference explanation of the protocol. This slide is built on this page."],
+    ["g","How HTTPS works (comic)","https://howhttps.works/","Web comic · ~20 min — the locked envelope explained by cats: certificates, encryption, the lock icon."],
+    ["y","HTTP Crash Course — Traversy Media","https://www.youtube.com/watch?v=iYM2zFP3Zn0","Video · ~40 min — the best beginner video on HTTP; re-watch of this whole chapter in different words."],
+    ["r","Launch School — Introductory HTTP (free book)","https://launchschool.com/books/http/read/background","E-book · ~2 h — one calm, complete, beginner-paced walkthrough of HTTP from zero. A weekend well spent."]
+  ],
+  9: [
+    ["g","MDN — Overview of HTTP","https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Overview","Article · ~15 min — requests and their parts (method, path, headers, body), straight from the source."],
+    ["g","MDN — HTTP request methods","https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Methods","Reference — the verbs, one page. Keep it open while building."],
+    ["y","freeCodeCamp — An introduction to HTTP","https://www.freecodecamp.org/news/http-and-everything-you-need-to-know-about-it/","Article · ~20 min — the same material in different words, for when MDN's phrasing didn't click."]
+  ],
+  10: [
+    ["g","Express — Basic routing","https://expressjs.com/en/starter/basic-routing.html","Official docs — this slide's route table, in real JavaScript code. The heart of the JS lane."],
+    ["g","FastAPI — First steps","https://fastapi.tiangolo.com/tutorial/first-steps/","Official docs — the same picture in Python; famously beginner-friendly."],
+    ["y","FastAPI — Path parameters","https://fastapi.tiangolo.com/tutorial/path-params/","Official docs — how /tasks/{id} reaches your handler as a variable."]
+  ],
+  11: [
+    ["g","MDN — Overview of HTTP","https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Overview","Article · ~15 min — responses and their parts, from the same reference page."],
+    ["g","MDN — HTTP response status codes","https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status","Reference — bookmark it; you'll choose codes in every milestone."]
+  ],
+  12: [
+    ["g","MDN — HTTP response status codes","https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status","Reference — the full list, grouped by family. THE bookmark of this slide."],
+    ["y","Launch School — Introductory HTTP (free book)","https://launchschool.com/books/http/read/background","E-book — status codes in their full context, at a calm pace."]
+  ],
+  13: [
+    ["g","MDN — What are browser developer tools?","https://developer.mozilla.org/en-US/docs/Learn_web_development/Howto/Tools_and_setup/What_are_browser_developer_tools","Article · ~10 min — the plain-language tour of all three tabs, for every major browser."],
+    ["g","Chrome DevTools — Console overview","https://developer.chrome.com/docs/devtools/console","Official guide · ~10 min — the logbook tab: run JavaScript, read errors without panic."],
+    ["y","Chrome DevTools — View and change the DOM","https://developer.chrome.com/docs/devtools/dom","Official guide · ~15 min — the Elements tab properly: find, inspect and edit the live page."]
+  ],
+  14: [
+    ["g","Chrome DevTools — Inspect network activity","https://developer.chrome.com/docs/devtools/network","Official guide · ~15 min — this exact demo as a follow-along: recording, reading status codes, filtering."],
+    ["g","MDN — What are browser developer tools?","https://developer.mozilla.org/en-US/docs/Learn_web_development/Howto/Tools_and_setup/What_are_browser_developer_tools","Article · ~10 min — if you use Firefox or Safari, this shows your browser's equivalent."]
+  ],
+  15: [
+    ["g","MDN — HTTP request methods","https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Methods","Reference — GET, POST, PUT, PATCH, DELETE: exactly the verbs of your CRUD API, one page."],
+    ["g","Treblle — Understanding RESTful API CRUD operations","https://treblle.com/blog/understanding-restful-api-crud-operations","Article · ~15 min — maps CRUD to HTTP methods with clear examples; the exact mental model of the project."],
+    ["y","Zuplo — How to design a RESTful API with CRUD","https://zuplo.com/learning-center/restful-api-with-crud","Article · ~20 min — one step further: URL naming, status code choices, common design mistakes."],
+    ["y","restfulapi.net","https://restfulapi.net/","Site — the 'textbook' on REST principles, for 'is my design right?' questions."]
+  ],
+  16: [
+    ["g","MDN — HTTP response status codes (4xx)","https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status","Reference — 400 vs 404 vs 422: the codes validation speaks in."],
+    ["r","OWASP — Input Validation Cheat Sheet","https://cheatsheetseries.owasp.org/cheatsheets/Input_Validation_Cheat_Sheet.html","Reference — how deep this rabbit hole goes in professional security. Skim to see your future; don't study it yet."]
+  ],
+  17: [
+    ["g","JSONPlaceholder","https://jsonplaceholder.typicode.com/","Free practice API — like this playground, but a real server. No signup, can't break it."],
+    ["g","restful-api.dev","https://restful-api.dev/","Free practice API — full CRUD against someone else's server before you build your own."],
+    ["g","Hoppscotch","https://hoppscotch.io/","Free web tool — send requests from your browser, no install. The friendly path when curl feels scary."]
+  ],
+  18: [
+    ["g","Postman — What is an API?","https://www.postman.com/what-is-an-api/","Article · ~10 min — a beginner's guide from the company whose whole product is calling APIs."],
+    ["y","restfulapi.net","https://restfulapi.net/","Site — what makes an API 'RESTful' — the conventions behind the style you'll build."]
+  ],
+  19: [
+    ["g","MDN — Working with JSON","https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Scripting/JSON","Article · ~15 min — the only JSON tutorial you'll ever need."],
+    ["y","json.org","https://www.json.org/json-en.html","Reference — the entire JSON format on one page, with the famous railroad diagrams."]
+  ],
+  20: [
+    ["g","Everything curl — the basics","https://everything.curl.dev/cmdline/basics.html","Free book chapter — how to GET, POST and see headers with -i. All you need for the milestone checkpoints."],
+    ["g","Hoppscotch","https://hoppscotch.io/","Free web tool — the same requests with buttons instead of typing."],
+    ["g","JSONPlaceholder","https://jsonplaceholder.typicode.com/","Free practice API — the one from this demo. Try it the minute you finish this deck."],
+    ["y","Postman","https://www.postman.com/downloads/","Free app — the industry-standard API client; save requests, re-run the whole CRUD cycle with one click."]
+  ],
+  21: [
+    ["g","Swagger UI — what it is","https://swagger.io/tools/swagger-ui/","Overview — the tool of this slide, from its makers."],
+    ["g","FastAPI — interactive docs are built in","https://fastapi.tiangolo.com/tutorial/first-steps/#interactive-api-docs","Official docs — Python lane: your free /docs page, shown before you build it."],
+    ["g","swagger-ui-express (npm)","https://www.npmjs.com/package/swagger-ui-express","Package docs — JS lane: serve Swagger UI at /docs with one package. The README example is all you need."],
+    ["y","OpenAPI 3.0 — basic structure","https://swagger.io/docs/specification/v3_0/basic-structure/","Official docs — what the openapi.json file actually contains (paths, parameters, responses)."],
+    ["y","LogRocket — Documenting your Express API with Swagger","https://blog.logrocket.com/documenting-express-js-api-swagger/","Tutorial · ~30 min — the stretch goal: generate your spec from code comments."]
+  ],
+  22: [
+    ["g","GraphQL.org — Learn","https://graphql.org/learn/","Official tutorial — queries, types and mutations from the source, at a gentle pace."],
+    ["g","Fireship — GraphQL Explained in 100 Seconds","https://www.youtube.com/watch?v=eIQh02xuVw4","Video · ~2 min — this slide, animated, in 100 seconds."],
+    ["y","How to GraphQL","https://www.howtographql.com/","Free course — from zero to a working GraphQL app, in your language of choice. For when you want to go further."]
+  ],
+  23: [
+    ["g","Express — Hello world","https://expressjs.com/en/starter/hello-world.html","Official docs — Milestone 0 of the JS lane: ~10 lines, copy and understand each one."],
+    ["g","FastAPI — First steps","https://fastapi.tiangolo.com/tutorial/first-steps/","Official docs — Milestone 0 of the Python lane, step by step."],
+    ["g","freeCodeCamp — Create a CRUD API with Node & Express","https://www.freecodecamp.org/news/create-crud-api-project/","Article · ~45 min — the whole project shape (books instead of tasks) as a worked example for milestones 2–4."],
+    ["y","freeCodeCamp — FastAPI Course for Beginners","https://www.youtube.com/watch?v=tLKKmouUams","Video · ~1 h — Python lane: the exact toolkit of Stages 2–4, demonstrated live."],
+    ["y","Build a REST API with Node JS and Express","https://www.youtube.com/watch?v=l8WPWK9mS5M","Video · ~1 h — JS lane: watch every endpoint written and tested; stay one milestone ahead of it."]
+  ],
+  24: [
+    ["g","GitHub Docs — Hello World","https://docs.github.com/en/get-started/start-your-journey/hello-world","Official guide · ~15 min — from 'no account' to 'my code is online', GitHub's own quickstart."],
+    ["g","Make a README","https://www.makeareadme.com/","Guide + template — everything a good README needs; milestone 6 in one page."],
+    ["y","freeCodeCamp — Git & GitHub Crash Course","https://www.youtube.com/watch?v=mAFoROnOfHs","Video · ~1 h 20 — add, commit, push and friends, shown on screen. Branches and pull requests are the natural next step."],
+    ["y","Learn Git Branching","https://learngitbranching.js.org/","Interactive game — practice commits and branches level by level. Weirdly addictive."]
+  ]
+};
+const LVL = {g:["dg","Start here"], y:["dy","When comfortable"], r:["dr","Deep dive"]};
+document.body.insertAdjacentHTML("beforeend",
+  '<div id="resdrawer"><div class="rhead"><div><div class="rk">Resources for this slide</div><div class="rt" id="restitle"></div></div><button id="resclose">✕</button></div><div id="resbody"></div></div>');
+const resBtn = document.createElement("button");
+resBtn.className = "tb"; resBtn.id = "resbtn";
+resBtn.innerHTML = '📚 Resources (R)<span class="cnt" id="rescnt">0</span>';
+document.getElementById("tgFull").after(resBtn);
+const drawer = document.getElementById("resdrawer");
+function renderRes() {
+  const n = (parseInt(location.hash.slice(1)) || 1);
+  const list = RES[n] || [];
+  document.getElementById("rescnt").textContent = list.length;
+  document.getElementById("restitle").textContent = n + " · " + (slides[n-1] ? slides[n-1].nav : "");
+  const legend = '<div class="rleg"><span class="dot dg"></span>start here (everyone) &nbsp; <span class="dot dy"></span>when you’re comfortable &nbsp; <span class="dot dr"></span>optional deep dive<br>All free, no credit card. Links open in a new tab.</div>';
+  document.getElementById("resbody").innerHTML = legend + (list.length
+    ? list.map(r => '<a class="ritem" href="' + r[2] + '" target="_blank" rel="noopener"><div class="rt1"><span class="dot ' + LVL[r[0]][0] + '"></span>' + r[1] + '<span class="ext">↗</span></div><div class="rm">' + r[3] + "</div></a>").join("")
+    : '<div class="rempty">No extra reading for this one — just enjoy the slide.</div>');
+}
+function toggleDrawer(force) { drawer.classList.toggle("open", force); }
+resBtn.onclick = () => { renderRes(); toggleDrawer(!drawer.classList.contains("open")); };
+document.getElementById("resclose").onclick = () => toggleDrawer(false);
+window.addEventListener("hashchange", renderRes);
+document.addEventListener("keydown", (e) => {
+  if (["INPUT","SELECT","TEXTAREA"].includes(e.target.tagName)) return;
+  if (e.key.toLowerCase() === "r") { renderRes(); toggleDrawer(!drawer.classList.contains("open")); }
+  else if (e.key === "Escape") toggleDrawer(false);
+});
+document.addEventListener("click", (e) => {
+  if (drawer.classList.contains("open") && !drawer.contains(e.target) && e.target !== resBtn && !resBtn.contains(e.target)) toggleDrawer(false);
+});
+renderRes();
+</script>
+</body>
+</html>

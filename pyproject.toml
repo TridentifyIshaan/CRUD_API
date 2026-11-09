@@ -1,0 +1,3 @@
+# Configure the app entrypoint defining to do 'from backend.main import app'
+[tool.fastapi]
+entrypoint = "backend.main:app"
