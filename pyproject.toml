@@ -1,3 +1,12 @@
-# Configure the app entrypoint defining to do 'from backend.main import app'
+[project]
+name = "crud-api"
+version = "0.1.0"
+description = "FastAPI CRUD API"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi[standard]>=0.115.0",
+]
+
 [tool.fastapi]
 entrypoint = "backend.main:app"
