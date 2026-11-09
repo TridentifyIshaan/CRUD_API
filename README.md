@@ -24,7 +24,8 @@
 - [🚦 6. Stage-by-Stage Implementation Matrix](#-6-stage-by-stage-implementation-matrix)
 - [📖 7. Interactive Documentation & Schema Contracts](#-7-interactive-documentation--schema-contracts)
   - [7.1 Documentation Interfaces](#71-documentation-interfaces)
-  - [7.2 Schema & Contract Design](#72-schema--contract-design)
+  - [7.2 Swagger UI Verification Preview](#72-swagger-ui-verification-preview)
+  - [7.3 Schema & Contract Design](#73-schema--contract-design)
 - [🔌 8. API Endpoints & Request/Response Verification](#-8-api-endpoints--requestresponse-verification)
   - [8.1 Full Endpoint Inventory](#81-full-endpoint-inventory)
   - [8.2 Terminal Verification via cURL (Full CRUD Suite)](#82-terminal-verification-via-curl-full-crud-suite)
@@ -85,6 +86,10 @@ Modern backend services require deterministic dependencies, minimal cold-start l
 CRUD_API/
 ├── backend/
 │   └── main.py          ← Core application entrypoint, stage-divided route definitions, and handlers
+├── Docs/
+│   ├── Backend 101 with resources.html ← Companion lecture deck & web fundamentals
+│   ├── Task API - Project Brief.pdf    ← Week 2 specification & milestone requirements
+│   └── Swagger.png                     ← Interactive Swagger UI validation screenshot
 ├── pyproject.toml       ← Project metadata & FastAPI CLI entrypoint orchestration
 ├── requirements.txt     ← Locked root dependencies (fastapi[standard])
 ├── .gitignore           ← Workspace ignore rules (.venv, pycache, OS artifacts)
@@ -207,8 +212,8 @@ The codebase is engineered incrementally across structured architectural stages:
 | **2** | **Read Operations** | `GET /tasks`, `GET /tasks/{task_id}` | `200`, `404` | ✅ Complete |
 | **3** | **Create with Validation** | `POST /tasks` | `201`, `400` | ✅ Complete |
 | **4** | **Full CRUD (Update & Delete)** | `PUT /tasks/{task_id}`, `DELETE /tasks/{task_id}` | `200`, `204`, `400`, `404` | ✅ Complete |
-| **5** | **Interactive Contract Audit** | Swagger UI verification via `/docs` | All | 🔄 Interactive |
-| **6** | **GitHub Versioning & Delivery** | ≥ 6 discrete stage commits & docs | N/A | 🔄 In Progress |
+| **5** | **Interactive Contract Audit** | Swagger UI verification via `/docs` | All | ✅ Complete |
+| **6** | **GitHub Versioning & Delivery** | ≥ 6 discrete stage commits & docs | N/A | ✅ Complete |
 
 --------
 
@@ -224,7 +229,13 @@ FastAPI parses route operations at startup and mounts real-time documentation in
 | **ReDoc** | [http://localhost:8000/redoc](http://localhost:8000/redoc) | Clean, publication-grade responsive documentation layout. |
 | **OpenAPI Schema** | [http://localhost:8000/openapi.json](http://localhost:8000/openapi.json) | Raw machine-readable OpenAPI 3.1.0 specification in JSON format. |
 
-### 7.2 Schema & Contract Design
+### 7.2 Swagger UI Verification Preview
+
+Below is the verified interactive Swagger UI interface generated directly from the route definitions and Pydantic schemas:
+
+![Swagger UI Interface](Docs/Swagger.png)
+
+### 7.3 Schema & Contract Design
 
 - **API Specification (OpenAPI 3.1)**: Defines the outer contract boundaries—HTTP paths, methods, parameters, status codes, and security definitions.
 - **Data Schemas (JSON Schema)**: Outlines the physical shape, types, constraints, and validation rules of request and response payloads.
