@@ -161,14 +161,14 @@ The project was delivered incrementally across 7 structured stages:
 | Stage | Milestone | Status |
 | :---: | :--- | :---: |
 | **0** | **Database & Lifespan Setup**: `database/tasks.db` created and seeded on startup via FastAPI `lifespan` | ✅ Complete |
-| **1** | Read from SQLite | ⏳ Upcoming |
+| **1** | **Read from SQLite**: `GET /tasks` & `GET /tasks/{id}` read live from `database/tasks.db` | ✅ Complete |
 | **2** | Create in SQLite | ⏳ Upcoming |
 | **3** | Update & Delete via SQL | ⏳ Upcoming |
 | **4** | Parameterized Safety & SQL Injection | ⏳ Upcoming |
 | **5** | Clean Clone & Documentation | ⏳ Upcoming |
 | **6** | AI Rematch Migration Diff | ⏳ Upcoming |
 
-> Routes still serve the in-memory store until Task 2 Stage 1 lands. See [`tests.md`](tests.md) for verification steps.
+> `GET /tasks` and `GET /tasks/{id}` read directly from SQLite. Write operations will migrate to SQL in Stages 2 & 3. See [`tests.md`](tests.md) for verification steps.
 
 ---
 
@@ -316,6 +316,7 @@ This project follows [Semantic Versioning 2.0.0](https://semver.org/). Every rel
 | :--- | :--- |
 | `v1.0.0` | Task 1 complete: in-memory CRUD API |
 | `v1.1.0-alpha.1` | Task 2 Stage 0: SQLite database & lifespan setup |
+| `v1.1.0-alpha.2` | Task 2 Stage 1: Database read endpoints |
 
 ```sh
 git tag -l                 # list versions

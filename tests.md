@@ -33,10 +33,13 @@ Comprehensive testing guide and verification checkpoints for **Task 1** (*In-Mem
 Ensure you are at the repository root (`CRUD_API`):
 
 ```bash
-# Start the FastAPI ASGI server with auto-reload
+# Run Task 2 (SQLite Database API - Default):
 fastapi dev
-# OR using Astral uv:
-uv run fastapi dev
+# OR: uv run fastapi dev
+
+# Run Task 1 (In-Memory API):
+fastapi dev backend/task1_main.py
+# OR: uv run fastapi dev backend/task1_main.py
 ```
 
 - **Base URL:** `http://localhost:8000`
