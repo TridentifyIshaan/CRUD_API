@@ -21,6 +21,7 @@ A lightweight, high-throughput asynchronous RESTful API engineered with **FastAP
 - [Interactive Documentation](#interactive-documentation)
 - [AI Rematch Analysis](#ai-rematch-analysis)
 - [Deployment](#deployment)
+- [Versioning and Releases](#versioning-and-releases)
 - [Proprietary License](#proprietary-license)
 
 ---
@@ -70,10 +71,14 @@ CRUD_API/
 │   └── main.py          # Core API application with stage-annotated routes
 ├── ai-version/
 │   └── main.py          # Quarantined AI implementation for benchmark diff
+├── database/
+│   └── tasks.db         # SQLite store, auto-created on startup (git-ignored)
 ├── Docs/
 │   ├── Backend 101 with resources.html  # Companion lecture resources
 │   ├── Task API - Project Brief.pdf     # Engineering specification brief
-│   └── Swagger.png                      # Verified Swagger UI screenshot
+│   ├── Swagger.png                      # Verified Swagger UI screenshot
+│   └── Task API Database - Project Brief.pdf  # Task 2 (SQLite) specification
+├── tests.md             # Test execution manual for Task 1 & Task 2
 ├── pyproject.toml       # FastAPI CLI entrypoint configuration
 ├── requirements.txt     # Pinned root dependencies (fastapi[standard])
 ├── .gitignore           # Git ignore rules
@@ -150,6 +155,20 @@ The project was delivered incrementally across 7 structured stages:
 | **5** | **Swagger UI Audit** | Interactive validation at `/docs` | All | ✅ Complete |
 | **6** | **GitHub Delivery** | ≥ 6 meaningful stage commits & documentation | N/A | ✅ Complete |
 | **7** | **AI Rematch Benchmark** | Quarantined AI generation & architectural diff | N/A | ✅ Complete |
+
+### Task 2: SQLite Persistence (In Progress)
+
+| Stage | Milestone | Status |
+| :---: | :--- | :---: |
+| **0** | **Database & Lifespan Setup**: `database/tasks.db` created and seeded on startup via FastAPI `lifespan` | ✅ Complete |
+| **1** | Read from SQLite | ⏳ Upcoming |
+| **2** | Create in SQLite | ⏳ Upcoming |
+| **3** | Update & Delete via SQL | ⏳ Upcoming |
+| **4** | Parameterized Safety & SQL Injection | ⏳ Upcoming |
+| **5** | Clean Clone & Documentation | ⏳ Upcoming |
+| **6** | AI Rematch Migration Diff | ⏳ Upcoming |
+
+> Routes still serve the in-memory store until Task 2 Stage 1 lands. See [`tests.md`](tests.md) for verification steps.
 
 ---
 
@@ -276,6 +295,31 @@ COPY backend/ ./backend/
 EXPOSE 8000
 
 CMD ["fastapi", "run", "backend/main.py", "--port", "8000", "--host", "0.0.0.0"]
+```
+
+---
+
+## Versioning and Releases
+
+This project follows [Semantic Versioning 2.0.0](https://semver.org/). Every release commit is marked with an annotated git tag `vMAJOR.MINOR.PATCH[-PRERELEASE]`.
+
+| Part | Bump when | Example |
+| :--- | :--- | :--- |
+| **MAJOR** (`x`) | Breaking API change (endpoint/contract removed or changed incompatibly) | `1.4.2` → `2.0.0` |
+| **MINOR** (`y`) | New backward-compatible feature | `1.0.0` → `1.1.0` |
+| **PATCH** (`z`) | Backward-compatible bug fix | `1.1.0` → `1.1.1` |
+| **Pre-release** | Unstable build ahead of a release, ordered `alpha` < `beta` < `rc` | `1.1.0-alpha.1` → `1.1.0-alpha.2` → `1.1.0-beta.1` → `1.1.0` |
+
+`pyproject.toml` stores the same version in PEP 440 form (`1.1.0-alpha.1` → `1.1.0a1`).
+
+| Tag | Milestone |
+| :--- | :--- |
+| `v1.0.0` | Task 1 complete: in-memory CRUD API |
+| `v1.1.0-alpha.1` | Task 2 Stage 0: SQLite database & lifespan setup |
+
+```sh
+git tag -l                 # list versions
+git checkout v1.0.0        # inspect a release
 ```
 
 ---

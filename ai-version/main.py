@@ -2,6 +2,15 @@ from fastapi import FastAPI, HTTPException, status, Response
 from pydantic import BaseModel
 from typing import Optional, List
 
+# =============================================================================
+# Task 1 - STAGE 7: The AI Rematch (Quarantined AI-Generated Implementation)
+# =============================================================================
+# Quarantined LLM generation benchmarked against the hand-crafted implementation.
+
+# =============================================================================
+# Task 1 - STAGE 0: Application Initialization
+# =============================================================================
+# Core FastAPI ASGI instance configured with interactive documentation routes.
 app = FastAPI(
     title="Task API",
     version="1.0.0",
@@ -9,27 +18,10 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
-# In-memory task datastore
-tasks_db = [
-    {"id": 1, "title": "Setup development environment", "done": True},
-    {"id": 2, "title": "Design REST API schema", "done": True},
-    {"id": 3, "title": "Write automated test suite", "done": False},
-]
-
-# Pydantic validation schemas
-class TaskCreate(BaseModel):
-    title: Optional[str] = None
-
-class TaskUpdate(BaseModel):
-    title: Optional[str] = None
-    done: Optional[bool] = None
-
-class TaskResponse(BaseModel):
-    id: int
-    title: str
-    done: bool
-
-# Root & Health Endpoints
+# =============================================================================
+# Task 1 - STAGE 1: Discovery & Health Endpoints
+# =============================================================================
+# Root endpoint providing service discovery metadata.
 @app.get("/")
 def get_root():
     return {
@@ -38,15 +30,33 @@ def get_root():
         "endpoints": ["/tasks", "/health"]
     }
 
+# Health check probe for liveness and monitoring verification.
 @app.get("/health")
 def get_health():
     return {"status": "ok"}
 
-# Read Operations
+# =============================================================================
+# Task 1 - STAGE 2: Read Operations (In-Memory Store & Lookup with 404)
+# =============================================================================
+# In-memory task datastore seeded with initial demo tasks.
+tasks_db = [
+    {"id": 1, "title": "Setup development environment", "done": True},
+    {"id": 2, "title": "Design REST API schema", "done": True},
+    {"id": 3, "title": "Write automated test suite", "done": False},
+]
+
+# Response serialization model for task objects.
+class TaskResponse(BaseModel):
+    id: int
+    title: str
+    done: bool
+
+# Retrieve the complete task collection.
 @app.get("/tasks", response_model=List[TaskResponse])
 def list_tasks():
     return tasks_db
 
+# Retrieve a single task by ID or return 404 Not Found.
 @app.get("/tasks/{task_id}", response_model=TaskResponse)
 def get_single_task(task_id: int):
     task = next((t for t in tasks_db if t["id"] == task_id), None)
@@ -57,7 +67,14 @@ def get_single_task(task_id: int):
         )
     return task
 
-# Create Operation
+# =============================================================================
+# Task 1 - STAGE 3: Create Operation (POST with Pydantic Validation & 201 Created)
+# =============================================================================
+# Request body validation schema for task creation.
+class TaskCreate(BaseModel):
+    title: Optional[str] = None
+
+# Create a task, auto-assign ID, enforce validation rules, and return HTTP 201.
 @app.post("/tasks", response_model=TaskResponse, status_code=status.HTTP_201_CREATED)
 def create_task(payload: TaskCreate):
     if not payload.title or not payload.title.strip():
@@ -75,7 +92,15 @@ def create_task(payload: TaskCreate):
     tasks_db.append(new_task)
     return new_task
 
-# Update Operation
+# =============================================================================
+# Task 1 - STAGE 4: Update & Delete Operations (PUT & DELETE with 204 No Content)
+# =============================================================================
+# Request body validation schema for partial updates.
+class TaskUpdate(BaseModel):
+    title: Optional[str] = None
+    done: Optional[bool] = None
+
+# Update task title and/or done status with validation and 404 handling.
 @app.put("/tasks/{task_id}", response_model=TaskResponse)
 def update_task(task_id: int, payload: TaskUpdate):
     task = next((t for t in tasks_db if t["id"] == task_id), None)
@@ -104,7 +129,7 @@ def update_task(task_id: int, payload: TaskUpdate):
         
     return task
 
-# Delete Operation
+# Delete task by ID and return HTTP 204 No Content.
 @app.delete("/tasks/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_task(task_id: int):
     task = next((t for t in tasks_db if t["id"] == task_id), None)
