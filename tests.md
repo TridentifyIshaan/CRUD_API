@@ -17,9 +17,9 @@ Comprehensive testing guide and verification checkpoints for **Task 1** (*In-Mem
   - [Stage 6: Git Delivery Audit](#t1---stage-6-git-delivery-audit)
   - [Stage 7: AI Rematch Diff](#t1---stage-7-ai-rematch-diff)
 - [Task 2: SQLite Database CRUD API Tests (T2)](#task-2-sqlite-database-crud-api-tests-t2)
-  - [Stage 0: Database & Lifecycle Setup (Current)](#t2---stage-0-database--lifecycle-setup-current)
-  - [Stage 1: Read from SQLite (Upcoming)](#t2---stage-1-read-from-sqlite-upcoming)
-  - [Stage 2: Create in SQLite (Upcoming)](#t2---stage-2-create-in-sqlite-upcoming)
+  - [Stage 0: Database & Lifecycle Setup (Complete)](#t2---stage-0-database--lifecycle-setup-complete)
+  - [Stage 1: Read from SQLite (Complete)](#t2---stage-1-read-from-sqlite-complete)
+  - [Stage 2: Create in SQLite (Complete)](#t2---stage-2-create-in-sqlite-complete)
   - [Stage 3: Update & Delete via SQL (Upcoming)](#t2---stage-3-update--delete-via-sql-upcoming)
   - [Stage 4: Parameterized Safety & SQL Injection (Upcoming)](#t2---stage-4-parameterized-safety--sql-injection-upcoming)
   - [Stage 5: Clean Clone & Documentation (Upcoming)](#t2---stage-5-clean-clone--documentation-upcoming)
@@ -236,7 +236,7 @@ git diff --no-index backend/main.py ai-version/main.py
 
 ## Task 2: SQLite Database CRUD API Tests (T2)
 
-### T2 - Stage 0: Database & Lifecycle Setup (Current)
+### T2 - Stage 0: Database & Lifecycle Setup (Complete)
 
 #### Test 0.1: SQLite File & Table Schema Verification
 Run directly from terminal without needing the server:
@@ -311,40 +311,99 @@ print('Auto-created row count:', conn.cursor().execute('SELECT COUNT(*) FROM tas
 
 ---
 
-### T2 - Stage 1: Read from SQLite (Upcoming)
+### T2 - Stage 1: Read from SQLite (Complete)
 
-When `GET /tasks` and `GET /tasks/{id}` are migrated to SQL:
+Verify that `GET /tasks` and `GET /tasks/{id}` read live from `database/tasks.db` using SQL queries (`SELECT id, title, done FROM tasks` and `SELECT ... WHERE id = ?`).
 
+#### Test 1.1: Fetch All Tasks from SQLite (`GET /tasks`)
 ```bash
-# 1. Fetch all tasks from database
-curl -s http://localhost:8000/tasks | jq .
-
-# 2. Fetch single task from database
-curl -s http://localhost:8000/tasks/1 | jq .
-
-# 3. Query non-existent ID
-curl -i http://localhost:8000/tasks/9999
-# Expect: 404 Not Found
+curl -i http://localhost:8000/tasks
 ```
+- **Expected Status:** `200 OK`
+- **Expected Response:** JSON array with all tasks and boolean `"done"` status:
+  ```json
+  [
+    {"id": 1, "title": "Task 1: Build your first CRUD API with in-memory storage", "done": true},
+    {"id": 2, "title": "Task 2: Connect CRUD API to SQLite database", "done": false}
+  ]
+  ```
+
+#### Test 1.2: Fetch Single Task (`GET /tasks/1`)
+```bash
+curl -i http://localhost:8000/tasks/1
+```
+- **Expected Status:** `200 OK`
+- **Expected Response:**
+  ```json
+  {"id": 1, "title": "Task 1: Build your first CRUD API with in-memory storage", "done": true}
+  ```
+
+#### Test 1.3: Fetch Non-Existent Task (`GET /tasks/999`)
+```bash
+curl -i http://localhost:8000/tasks/999
+```
+- **Expected Status:** `404 Not Found`
+- **Expected Response:** `{"detail":"Task 999 not found"}`
 
 ---
 
-### T2 - Stage 2: Create in SQLite (Upcoming)
+### T2 - Stage 2: Create in SQLite (Complete)
 
-When `POST /tasks` is migrated to SQL (`INSERT INTO tasks`):
+Verify that new tasks are saved permanently to `database/tasks.db` using `INSERT INTO tasks (title, done) VALUES (?, ?)`.
 
+#### Test 2.1: Successful Task Creation (`POST /tasks`)
 ```bash
-# 1. Insert new task
 curl -i -X POST http://localhost:8000/tasks \
   -H "Content-Type: application/json" \
-  -d '{"title": "Persisted task test"}'
-# Expect: 201 Created with auto-generated ID 3
-
-# 2. RESTART SERVER TEST (The persistence proof)
-# Stop server (Ctrl+C), start server again.
-curl -s http://localhost:8000/tasks | jq .
-# Expect: The "Persisted task test" is STILL THERE!
+  -d '{"title": "Test persistent database storage"}'
 ```
+- **Expected Status:** `201 Created`
+- **Expected Response:** Auto-assigned database primary key and `done: false`:
+  ```json
+  {
+    "id": 3,
+    "title": "Test persistent database storage",
+    "done": false
+  }
+  ```
+
+#### Test 2.2: Zero-Trust Validation - Missing/Empty Title
+```bash
+curl -i -X POST http://localhost:8000/tasks \
+  -H "Content-Type: application/json" \
+  -d '{}'
+```
+- **Expected Status:** `400 Bad Request`
+- **Expected Response:** `{"detail":"Title is required & can't be empty"}`
+
+#### Test 2.3: Zero-Trust Validation - Whitespace-Only Title
+```bash
+curl -i -X POST http://localhost:8000/tasks \
+  -H "Content-Type: application/json" \
+  -d '{"title": "     "}'
+```
+- **Expected Status:** `400 Bad Request`
+- **Expected Response:** `{"detail":"Title is required & can't be empty"}`
+
+#### Test 2.4: THE RESTART TEST (Data Persistence Proof)
+This test proves that the data outlives program memory:
+
+1. Create a task via API:
+   ```bash
+   curl -i -X POST http://localhost:8000/tasks \
+     -H "Content-Type: application/json" \
+     -d '{"title": "I will survive server restarts"}'
+   ```
+2. Stop your server by pressing `Ctrl + C` in the server terminal.
+3. Start the server again:
+   ```bash
+   fastapi dev
+   ```
+4. Query the tasks:
+   ```bash
+   curl -s http://localhost:8000/tasks | jq .
+   ```
+- **Assertion:** `"I will survive server restarts"` is **still in the output**!
 
 ---
 
@@ -458,9 +517,14 @@ STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:8000/ta
 [ "$STATUS" = "400" ] && echo "✅ PASS" || echo "❌ FAIL (Got $STATUS)"
 
 # 6. HTTP 404 Check
-echo -n "[T1-2.3] GET /tasks/9999 (HTTP 404): "
+echo -n "[T2-1.3] GET /tasks/9999 (HTTP 404): "
 STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/tasks/9999)
 [ "$STATUS" = "404" ] && echo "✅ PASS" || echo "❌ FAIL (Got $STATUS)"
+
+# 7. Persistent Task Creation Check
+echo -n "[T2-2.1] POST /tasks (HTTP 201 Created): "
+STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:8000/tasks -H "Content-Type: application/json" -d "{\"title\": \"Automated Verification Task\"}")
+[ "$STATUS" = "201" ] && echo "✅ PASS" || echo "❌ FAIL (Got $STATUS)"
 
 echo "============================================="
 echo "               TESTS COMPLETE                "
