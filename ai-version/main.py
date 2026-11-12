@@ -3,7 +3,9 @@ from pathlib import Path
 from typing import List, Optional
 import sqlite3
 
-from fastapi import FastAPI, HTTPException, Response, status
+from fastapi import FastAPI, HTTPException, Request, Response, status
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 # =============================================================================
@@ -11,15 +13,18 @@ from pydantic import BaseModel
 # =============================================================================
 # AI-generated migration of the in-memory Task API to SQLite, kept in
 # quarantine and benchmarked against the hand-built backend/main.py.
+# Round 2 (rematch): regenerated from the improved prompt in the README —
+# async routes, {"error": ...} bodies, 400 for malformed bodies, fixed seeds.
+# Round 1 is preserved at git tag v1.1.0.
 # Uses its own database file (ai-version/tasks.db) so it never touches
 # the hand-built database/tasks.db.
 
 DB_PATH = Path(__file__).resolve().parent / "tasks.db"
 
 SEED_TASKS = [
-    ("Setup development environment", 1),
-    ("Design REST API schema", 1),
-    ("Write automated test suite", 0),
+    ("Task 1: Build your first CRUD API with in-memory storage", 1),
+    ("Task 2: Connect CRUD API to SQLite database", 1),
+    ("Task 3: Containerise the project stack with Docker", 0),
 ]
 
 
@@ -71,6 +76,18 @@ app = FastAPI(
 )
 
 
+@app.exception_handler(HTTPException)
+async def http_error(request: Request, exc: HTTPException):
+    return JSONResponse(status_code=exc.status_code, content={"error": exc.detail})
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_error(request: Request, exc: RequestValidationError):
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST, content={"error": "Invalid request body"}
+    )
+
+
 class TaskResponse(BaseModel):
     id: int
     title: str
@@ -88,22 +105,22 @@ class TaskUpdate(BaseModel):
 
 def not_found(task_id: int) -> HTTPException:
     return HTTPException(
-        status_code=status.HTTP_404_NOT_FOUND, detail=f"Task {task_id} not found"
+        status_code=status.HTTP_404_NOT_FOUND, detail="Task not found"
     )
 
 
 @app.get("/")
-def get_root():
+async def get_root():
     return {"name": "Task API", "version": "2.0", "endpoints": ["/tasks", "/health"]}
 
 
 @app.get("/health")
-def get_health():
+async def get_health():
     return {"status": "ok"}
 
 
 @app.get("/tasks", response_model=List[TaskResponse])
-def list_tasks():
+async def list_tasks():
     conn = get_connection()
     try:
         rows = conn.execute("SELECT id, title, done FROM tasks ORDER BY id").fetchall()
@@ -113,7 +130,7 @@ def list_tasks():
 
 
 @app.get("/tasks/{task_id}", response_model=TaskResponse)
-def get_single_task(task_id: int):
+async def get_single_task(task_id: int):
     conn = get_connection()
     try:
         row = conn.execute(
@@ -127,7 +144,7 @@ def get_single_task(task_id: int):
 
 
 @app.post("/tasks", response_model=TaskResponse, status_code=status.HTTP_201_CREATED)
-def create_task(payload: TaskCreate):
+async def create_task(payload: TaskCreate):
     if not payload.title or not payload.title.strip():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -146,7 +163,7 @@ def create_task(payload: TaskCreate):
 
 
 @app.put("/tasks/{task_id}", response_model=TaskResponse)
-def update_task(task_id: int, payload: TaskUpdate):
+async def update_task(task_id: int, payload: TaskUpdate):
     if payload.title is None and payload.done is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -182,7 +199,7 @@ def update_task(task_id: int, payload: TaskUpdate):
 
 
 @app.delete("/tasks/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_task(task_id: int):
+async def delete_task(task_id: int):
     conn = get_connection()
     try:
         with conn:

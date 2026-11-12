@@ -20,9 +20,11 @@ A lightweight, high-throughput asynchronous RESTful API engineered with **FastAP
 - [Implementation Roadmap](#implementation-roadmap)
 - [API Endpoints and Verification](#api-endpoints-and-verification)
 - [Interactive Documentation](#interactive-documentation)
+- [Extras: Filter, Search, Sort, Stats & Timestamps](#extras-filter-search-sort-stats--timestamps)
 - [Direct SQL Database Inspection](#direct-sql-database-inspection)
 - [AI Rematch Analysis](#ai-rematch-analysis)
 - [AI vs Me (Task 2)](#ai-vs-me-task-2)
+- [Proving the API Didn't Change](#proving-the-api-didnt-change)
 - [Deployment](#deployment)
 - [Versioning and Releases](#versioning-and-releases)
 - [Proprietary License](#proprietary-license)
@@ -74,12 +76,14 @@ CRUD_API/
 │   ├── main.py          # Task 2: hand-built SQLite CRUD API (default entrypoint)
 │   └── task1_main.py    # Task 1: hand-built in-memory CRUD API
 ├── ai-version/
-│   ├── main.py          # Task 2: quarantined AI SQLite migration (uses ai-version/tasks.db)
+│   ├── main.py          # Task 2: quarantined AI SQLite migration, rematch round (uses ai-version/tasks.db)
 │   └── task1_main.py    # Task 1: quarantined AI in-memory implementation
+├── tests/
+│   └── test_api.py      # Shared contract tests run against Task 1 & Task 2 + SQLite-only tests
 ├── database/
 │   └── tasks.db         # SQLite store, auto-created on startup (git-ignored)
 ├── Docs/
-│   ├── Backend 101 with resources.html  # Companion lecture resources
+│   ├── Backend resources.html           # Companion lecture resources
 │   ├── Task API - Project Brief.pdf     # Engineering specification brief
 │   ├── Swagger.png                      # Verified Swagger UI screenshot
 │   └── Task API Database - Project Brief.pdf  # Task 2 (SQLite) specification
@@ -108,11 +112,13 @@ In Task 2, application persistence was migrated from an ephemeral in-memory Pyth
 - **Single-File Architecture**: The complete database schema, table definitions, indexes, and row data reside entirely inside a single compact file (`database/tasks.db`).
 - **Zero-Config & Serverless**: Unlike client-server engines (PostgreSQL, MySQL), SQLite is embedded in-process. There is no external daemon to install, no port conflicts, no connection credentials to configure, and zero operational overhead.
 - **Persistence Across Restarts**: Application state outlives the runtime process. Terminating, upgrading, or restarting the FastAPI server preserves all existing records on disk.
+- **All-or-Nothing Transactions**: every request runs inside one transaction (`with get_db() as conn:`), including the startup seed — so a crash mid-seed can never leave a half-seeded table; it either has all three tasks or none.
+- **Indexes**: `idx_tasks_done` and `idx_tasks_title` let SQLite jump straight to matching rows for `?done=` filters and `?sort=title`, like a book's index, instead of scanning every row.
 - **Production-Grade ACID Guarantees**: SQLite provides atomic commits, isolated transactions, and full SQL compliance with parameterized query support (`?` placeholders) to eliminate SQL injection risks.
 
 ### Database Location & Automatic Lifecycle
 - **File Path**: The database file is resolved dynamically at `database/tasks.db` relative to the project root.
-- **Auto-Creation via Lifespan**: When the server starts up, FastAPI's `@asynccontextmanager` `lifespan` handler triggers `init_db()`. If `database/tasks.db` or its parent directory does not exist, SQLite automatically creates the directory, initializes the database file, applies the `CREATE TABLE IF NOT EXISTS tasks` schema, and idempotently seeds initial tasks if the table row count is `0`.
+- **Auto-Creation via Lifespan**: When the server starts up, FastAPI's `@asynccontextmanager` `lifespan` handler triggers `init_db()`. If `database/tasks.db` or its parent directory does not exist, SQLite automatically creates the directory, initializes the database file, applies the `CREATE TABLE IF NOT EXISTS tasks` schema, and idempotently seeds three example tasks if the table row count is `0`. Older databases are migrated in place (missing `created_at`/`updated_at` columns are added with `ALTER TABLE`).
 - **Git-Ignored (`.gitignore`)**: `database/*.db` is explicitly ignored by version control. This ensures developer runtime data is never committed, and any fresh repository clone generates a pristine database deterministically.
 
 ### Single-Command Quickstart ("The Stranger Test")
@@ -219,7 +225,10 @@ The project was delivered incrementally across 7 structured stages:
 | **3** | **Update & Delete in SQL**: `PUT` & `DELETE` execute parameterized SQL on `tasks.db` with 200/204/404 | ✅ Complete |
 | **4** | **Direct SQL Exploration**: 5 core SQL queries executed directly in SQLite CLI with screenshots | ✅ Complete |
 | **5** | **Clean Clone Verification & Documentation**: SQLite rationale, one-command boot, auto-provisioning | ✅ Complete |
-| **6** | **AI vs Me**: AI-generated SQLite migration in quarantine (`ai-version/main.py`), run, diffed & reviewed | ✅ Complete |
+| **6** | **AI vs Me**: AI-generated SQLite migration in quarantine (`ai-version/main.py`), run, diffed, reviewed & rematched | ✅ Complete |
+| **★** | **Extras**: `?done=` filter, `?search=` (LIKE), `?sort=title`, `GET /stats`, `created_at`/`updated_at`, indexes, transactions | ✅ Complete |
+| **★** | **Stretch**: same contract tests pass on Task 1 & Task 2 (`uv run pytest`) | ✅ Complete |
+| **★** | **Containerise the Project Stack via Docker** | ⏳ Pending |
 
 > Full database persistence achieved! All 4 CRUD operations (`POST`, `GET`, `PUT`, `DELETE`) now execute parameterized SQL queries directly against SQLite (`database/tasks.db`). State outlives program memory. See [`tests.md`](tests.md) for full verification steps.
 
@@ -233,11 +242,14 @@ The project was delivered incrementally across 7 structured stages:
 | :---: | :--- | :---: | :--- | :---: |
 | `GET` | `/` | `200 OK` | Service metadata & available endpoints | None |
 | `GET` | `/health` | `200 OK` | Health monitoring check | None |
-| `GET` | `/tasks` | `200 OK` | List all tasks | None |
+| `GET` | `/tasks` | `200 OK` / `400` | List tasks; optional `?done=true\|false`, `?search=text`, `?sort=id\|title` | None |
+| `GET` | `/stats` | `200 OK` | `{"total", "done", "pending"}` computed in SQL | None |
 | `GET` | `/tasks/{task_id}` | `200 OK` / `404` | Retrieve single task by ID | None |
 | `POST` | `/tasks` | `201 Created` / `400` | Create a new task (auto ID, done=False) | `{"title": "string"}` |
 | `PUT` | `/tasks/{task_id}` | `200 OK` / `400` / `404` | Update title and/or done status | `{"title"?: "str", "done"?: bool}` |
 | `DELETE` | `/tasks/{task_id}` | `204 No Content` / `404`| Delete a task by ID (empty response body)| None |
+
+Tasks are returned as `{"id", "title", "done", "created_at", "updated_at"}`. Every error is a JSON object with one `error` message, e.g. `{"error": "Task not found"}`; malformed bodies (bad JSON, wrong types) return `400` rather than FastAPI's default `422`.
 
 ### Terminal Verification via cURL
 
@@ -253,13 +265,13 @@ curl -i http://localhost:8000/tasks
 curl -i -X POST http://localhost:8000/tasks \
   -H "Content-Type: application/json" \
   -d '{"title": "Deploy staging build"}'
-# HTTP/1.1 201 Created -> {"id":5,"title":"Deploy staging build","done":false}
+# HTTP/1.1 201 Created -> {"id":4,"title":"Deploy staging build","done":false,"created_at":"...","updated_at":"..."}
 
 # 4. Input Validation on Empty Body (400 Bad Request)
 curl -i -X POST http://localhost:8000/tasks \
   -H "Content-Type: application/json" \
   -d '{}'
-# HTTP/1.1 400 Bad Request -> {"detail":"Title is required and cannot be empty"}
+# HTTP/1.1 400 Bad Request -> {"error":"Title is required and cannot be empty"}
 
 # 5. Update Task (200 OK)
 curl -i -X PUT http://localhost:8000/tasks/1 \
@@ -273,8 +285,16 @@ curl -i -X DELETE http://localhost:8000/tasks/1
 
 # 7. Verify Deletion (404 Not Found)
 curl -i http://localhost:8000/tasks/1
-# HTTP/1.1 404 Not Found -> {"detail":"Task 1 not found"}
+# HTTP/1.1 404 Not Found -> {"error":"Task not found"}
+
+# 8. Extras
+curl -i "http://localhost:8000/tasks?done=true"
+curl -i "http://localhost:8000/tasks?search=CRUD"
+curl -i "http://localhost:8000/tasks?sort=title"
+curl -i http://localhost:8000/stats
 ```
+
+> Task 1 (`backend/task1_main.py`) keeps its original `{"detail": ...}` error bodies; the format change applies to Task 2 only.
 
 ---
 
@@ -360,16 +380,20 @@ Include Swagger docs at /docs.
 
 For Task 2 Stage 6, an AI assistant was asked to perform the same in-memory → SQLite migration. Its output is quarantined in [`ai-version/main.py`](ai-version/main.py) and writes to its own `ai-version/tasks.db`, so the hand-built [`backend/main.py`](backend/main.py) and `database/tasks.db` stay untouched.
 
-### Prompt Written
+### Round 1 Prompt
 ```text
-Migrate my in-memory FastAPI task API (Python, uv, stdlib sqlite3) to SQLite.
-Table `tasks`: id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, done boolean (0/1).
-Create the database file and the table if missing on startup (FastAPI lifespan).
-Seed three example tasks only when the table is empty, never on every restart.
-Keep GET /tasks, GET /tasks/{id}, POST /tasks, PUT /tasks/{id}, DELETE /tasks/{id} behaving identically:
-201 on create, 204 empty body on delete, 400 for missing/blank title or empty PUT body, 404 for unknown id,
-errors as JSON {"detail": ...}. Use parameterized ? placeholders for every query.
+Review and complete Stage 6: "AI vs Me" in the repository.
+
+- Rename ai-version/main.py to ai-version/task1_main.py.
+- Create a new main.py for Task 2, implementing the requirements for that task.
+- Update the README to accurately document the changes and how to run both tasks.
+- Run relevant tests or checks, and resolve any issues introduced by your changes.
+
+Once the work is complete, stage and commit the changes with a clear, appropriate commit message. Create and push a properly named stable release tag; this is not a pre-release. Push the commit and tag to the configured remote.
+
+Before finishing, verify the repository state and report the changes made, checks performed, commit hash, tag name, and push status.
 ```
+Round 1 output is preserved at tag `v1.1.0` (`git show v1.1.0:ai-version/main.py`).
 
 ### Run Results
 | Check | Result |
@@ -382,24 +406,75 @@ errors as JSON {"detail": ...}. Use parameterized ? placeholders for every query
 
 Compare with: `git diff --no-index backend/main.py ai-version/main.py`
 
-### 1. What did it do better?
+### Round 1 Findings
+
+#### 1. What did it do better?
 - **Explicit transactions**: wraps writes in `with conn:` so create-table + seed commit atomically, and rolls back on error.
 - **Single-statement update**: `UPDATE ... SET title = COALESCE(?, title), done = COALESCE(?, done)` avoids a separate SELECT before writing and checks `rowcount` for the 404.
 - **Schema constraints**: `CHECK (done IN (0, 1))` and `CHECK (length(trim(title)) > 0)` enforce the rules in the database itself, not only in Python.
 - **Connections always closed**: `try/finally: conn.close()` — note that `with sqlite3.connect()` in my version only commits/rolls back; it does not close the connection.
 - **Typed responses** via `response_model=TaskResponse` and a shared `row_to_task` helper.
 
-### 2. What did it get wrong or quietly ignore?
+#### 2. What did it get wrong or quietly ignore?
 - **Dropped `async def`** again, using sync routes (FastAPI runs them in a thread pool — fine for blocking sqlite3, but inconsistent with my codebase).
 - **Changed the database location** to `ai-version/tasks.db` instead of `database/tasks.db` (intended here for quarantine, but a silent spec drift otherwise).
 - **Seed data replaced** with generic placeholder tasks and a third seed, versus my two project-specific seeds.
 - **`done` stored as `INTEGER`** rather than the declared `BOOLEAN` — functionally identical in SQLite, but a different declared type.
 - No string-glued SQL, no multiplying seeds, and no status code changes were found.
 
-### 3. What did my prompt forget to specify?
-- The exact database path, so the AI chose its own.
-- Whether routes should stay `async`, and connection-closing/transaction expectations.
-- The exact seed task titles, and the precise wording of error messages.
+#### 3. What did my prompt forget to specify — and what did the AI silently decide?
+My prompt only said "implementing the requirements for that task", so everything concrete was left to the AI:
+- The library, database path, table columns and types — it picked `ai-version/tasks.db` and `INTEGER` for `done`.
+- Whether routes stay `async` — it silently switched to sync `def`.
+- The seed titles — it invented generic ones.
+- The error format and what malformed bodies return — it kept FastAPI's `{"detail"}` and default `422`.
+
+### Round 2 Prompt (the rematch)
+```text
+In ai-version/main.py, migrate my in-memory FastAPI Task API (Python, uv, stdlib sqlite3) to SQLite.
+- Database file ai-version/tasks.db, created with its folder if missing; table `tasks`
+  (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, done stored as 0/1), created if missing.
+- Seed exactly these three tasks, only when the table is empty, in one transaction:
+  "Task 1: Build your first CRUD API with in-memory storage" (done),
+  "Task 2: Connect CRUD API to SQLite database" (done),
+  "Task 3: Containerise the project stack with Docker" (not done).
+- Keep GET /, GET /health, GET /tasks, GET /tasks/{id}, POST /tasks, PUT /tasks/{id}, DELETE /tasks/{id}
+  behaving exactly as before, with async def routes.
+- 201 on create, 200 on update, 204 empty body on delete; 400 for missing/blank title, empty PUT body,
+  or malformed JSON/wrong types (not 422); 404 for unknown ids.
+- Every error body is {"error": "<message>"}; unknown id is {"error": "Task not found"}.
+- Use ? placeholders for every value, and always close each connection.
+```
+
+**What changed:** the regenerated version now uses `async def` routes, returns `{"error": ...}` bodies with `400` for malformed input, and seeds my exact three tasks — the only differences left from my code are style (`COALESCE` update, `CHECK` constraints, `response_model`), because the prompt now pinned down everything that mattered.
+
+---
+
+## Proving the API Didn't Change
+
+[`tests/test_api.py`](tests/test_api.py) runs the **same contract tests** against Task 1 (in-memory list) and Task 2 (SQLite): health, list, get-by-id, 404s, 400 validation, create → update → delete with `201`/`200`/`204`. Extra tests cover SQLite-only behaviour: seeding once across three restarts, data surviving a restart, the error format, extras, and migrating an old schema.
+
+```sh
+uv run pytest -v
+```
+
+Identical tests passing against both backends is the proof that storage is "just an implementation detail": the tests only talk to the HTTP contract, so if swapping a Python list for a database file changes none of their results, then clients cannot tell the difference either.
+
+---
+
+## Extras: Filter, Search, Sort, Stats & Timestamps
+
+All filtering, searching, sorting and counting is done by SQL rather than Python loops:
+
+| Extra | Request | SQL |
+| :--- | :--- | :--- |
+| Filter by status | `GET /tasks?done=true` | `WHERE done = ?` |
+| Search | `GET /tasks?search=CRUD` | `WHERE title LIKE ?` with `%CRUD%` |
+| Sort | `GET /tasks?sort=title` | `ORDER BY title COLLATE NOCASE` |
+| Statistics | `GET /stats` | `SELECT COUNT(*), SUM(done) FROM tasks` |
+| Timestamps | every task | `created_at`, `updated_at` set with `datetime('now')` |
+
+**On changing the table's shape:** adding `created_at` and `updated_at` was easy in code, but `CREATE TABLE IF NOT EXISTS` does nothing to a `tasks.db` that already exists, so existing databases silently kept the old shape until I wrote a check-and-`ALTER TABLE` step. That gap between "the code expects a new column" and "the file on disk doesn't have it yet" is exactly what migrations exist to manage.
 
 ---
 
@@ -448,6 +523,7 @@ This project follows [Semantic Versioning 2.0.0](https://semver.org/). Every rel
 | `v1.1.0-alpha.5` | Task 2 Stage 4: Direct SQL exploration & inspection screenshots |
 | `v1.1.0-alpha.6` | Task 2 Stage 5: Clean clone verification & database documentation |
 | `v1.1.0` | Task 2 complete: Stage 6 AI vs Me — stable SQLite release |
+| `v1.2.0` | Extras, error format, AI rematch, shared test suite |
 
 ```sh
 git tag -l                 # list versions

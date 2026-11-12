@@ -265,12 +265,15 @@ Table DDL:
  CREATE TABLE tasks (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,
-    done BOOLEAN NOT NULL DEFAULT 0   
+    done BOOLEAN NOT NULL DEFAULT 0,
+    created_at TEXT,
+    updated_at TEXT
 )
 
-Total rows: 2
+Total rows: 3
 Row 1: title="Task 1: Build your first CRUD API with in-memory storage", done=1
-Row 2: title="Task 2: Connect CRUD API to SQLite database", done=0
+Row 2: title="Task 2: Connect CRUD API to SQLite database", done=1
+Row 3: title="Task 3: Containerise the project stack with Docker", done=0
 ```
 
 #### Test 0.2: Idempotent Seeding & Restart Test
@@ -285,7 +288,7 @@ Proves that tasks do **not duplicate** when the application boots repeatedly:
    ```bash
    python3 -c "import sqlite3; conn = sqlite3.connect('database/tasks.db'); print('Count after 3 restarts:', conn.cursor().execute('SELECT COUNT(*) FROM tasks').fetchone()[0])"
    ```
-- **Assertion:** The count must remain **identical** before and after (e.g., `2 == 2`).
+- **Assertion:** The count must remain **identical** before and after (e.g., `3 == 3`).
 
 #### Test 0.3: Clean Clone / Self-Healing Test
 Proves that a stranger cloning your repo gets a working database with zero manual setup:
@@ -307,7 +310,7 @@ conn = sqlite3.connect('database/tasks.db')
 print('Auto-created row count:', conn.cursor().execute('SELECT COUNT(*) FROM tasks').fetchone()[0])
 "
 ```
-- **Assertion:** Prints `Auto-created row count: 2`.
+- **Assertion:** Prints `Auto-created row count: 3`.
 
 ---
 
@@ -343,7 +346,7 @@ curl -i http://localhost:8000/tasks/1
 curl -i http://localhost:8000/tasks/999
 ```
 - **Expected Status:** `404 Not Found`
-- **Expected Response:** `{"detail":"Task 999 not found"}`
+- **Expected Response:** `{"error":"Task not found"}`
 
 ---
 
@@ -374,7 +377,7 @@ curl -i -X POST http://localhost:8000/tasks \
   -d '{}'
 ```
 - **Expected Status:** `400 Bad Request`
-- **Expected Response:** `{"detail":"Title is required & can't be empty"}`
+- **Expected Response:** `{"error":"Title is required and cannot be empty"}`
 
 #### Test 2.3: Zero-Trust Validation - Whitespace-Only Title
 ```bash
@@ -383,7 +386,7 @@ curl -i -X POST http://localhost:8000/tasks \
   -d '{"title": "     "}'
 ```
 - **Expected Status:** `400 Bad Request`
-- **Expected Response:** `{"detail":"Title is required & can't be empty"}`
+- **Expected Response:** `{"error":"Title is required and cannot be empty"}`
 
 #### Test 2.4: THE RESTART TEST (Data Persistence Proof)
 This test proves that the data outlives program memory:
@@ -439,7 +442,7 @@ curl -i -X PUT http://localhost:8000/tasks/1 \
   -d '{}'
 ```
 - **Expected Status:** `400 Bad Request`
-- **Expected Response:** `{"detail":"Atleast one field (title or done) must be provided"}`
+- **Expected Response:** `{"error":"At least one field (title or done) must be provided"}`
 
 #### Test 3.4: Update Validation - Whitespace Title (`PUT /tasks/1`)
 ```bash
@@ -448,7 +451,7 @@ curl -i -X PUT http://localhost:8000/tasks/1 \
   -d '{"title": "   "}'
 ```
 - **Expected Status:** `400 Bad Request`
-- **Expected Response:** `{"detail":"Title cannot be empty or whitespace"}`
+- **Expected Response:** `{"error":"Title cannot be empty or whitespace"}`
 
 #### Test 3.5: Update Non-Existent ID (`PUT /tasks/999`)
 ```bash
@@ -457,7 +460,7 @@ curl -i -X PUT http://localhost:8000/tasks/999 \
   -d '{"done": true}'
 ```
 - **Expected Status:** `404 Not Found`
-- **Expected Response:** `{"detail":"Task 999 not found"}`
+- **Expected Response:** `{"error":"Task not found"}`
 
 #### Test 3.6: Delete Task (`DELETE /tasks/{id}`)
 ```bash
@@ -477,7 +480,7 @@ curl -i -X DELETE http://localhost:8000/tasks/$DISPOSABLE_ID
 curl -i -X DELETE http://localhost:8000/tasks/999
 ```
 - **Expected Status:** `404 Not Found`
-- **Expected Response:** `{"detail":"Task 999 not found"}`
+- **Expected Response:** `{"error":"Task not found"}`
 
 #### Test 3.8: Direct Database Verification
 ```bash
@@ -564,7 +567,7 @@ Validate the **"Clean Clone / Stranger Test"** — proving that a developer who 
 4. **Verify startup logs**:
    ```text
    Starting application: Initializing database...
-   ✅ Database initialized and seeded with 2 tasks.
+   ✅ Database initialized and seeded with 3 tasks.
    INFO:     Application startup complete.
    ```
 5. **Probe the API endpoint via cURL**:
@@ -573,7 +576,7 @@ Validate the **"Clean Clone / Stranger Test"** — proving that a developer who 
    ```
 - **Assertion:** 
   - Status code `200 OK`.
-  - Body contains the seeded default tasks with IDs 1 and 2.
+  - Body contains the seeded default tasks with IDs 1, 2 and 3.
   - `database/tasks.db` was created automatically on disk.
   - Repeating server restarts does not duplicate seed rows (`SELECT COUNT(*) FROM tasks` stays consistent).
 
@@ -588,6 +591,17 @@ git diff --no-index backend/main.py ai-version/main.py
 ```
 - Re-run the Stage 2 and Stage 3 checkpoints against port 8001, restart it, and confirm seeds are not duplicated and data persists.
 - Task 1 AI version now lives at `ai-version/task1_main.py` (`git diff --no-index backend/task1_main.py ai-version/task1_main.py`).
+
+---
+
+### T2 - Extras & Automated Tests
+```bash
+uv run pytest -v                                   # shared Task 1/Task 2 contract tests + SQLite tests
+curl -i "http://localhost:8000/tasks?done=true"    # only completed tasks
+curl -i "http://localhost:8000/tasks?search=CRUD"  # LIKE search
+curl -i "http://localhost:8000/tasks?sort=title"   # ORDER BY title
+curl -i http://localhost:8000/stats                # {"total":3,"done":2,"pending":1} on a fresh db
+```
 
 ---
 
