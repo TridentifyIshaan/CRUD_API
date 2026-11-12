@@ -1,13 +1,9 @@
 from fastapi import FastAPI, HTTPException # for api
 from pydantic import BaseModel # for request body validation
 
-# =============================================================================
 # Task 1: CRUD API with In-Memory Storage
-# =============================================================================
-
-# =============================================================================
 # Task 1 - STAGE 0: Application Initialization
-# =============================================================================
+
 # Initialize the core FastAPI ASGI application instance.
 app = FastAPI(
     title="Task CRUD API (In-Memory)",
@@ -15,9 +11,8 @@ app = FastAPI(
     description="Asynchronous RESTful CRUD service for task management using in-memory store."
 )
 
-# =============================================================================
 # Task 1 - STAGE 1: Root & Health Endpoints
-# =============================================================================
+
 # Root endpoint returning API metadata and service discovery details.
 @app.get("/")
 async def root():
@@ -32,9 +27,8 @@ async def root():
 async def health():
     return {"status": "ok"}
 
-# =============================================================================
 # Task 1 - STAGE 2: Read Operations (In-Memory Store & Lookup with 404)
-# =============================================================================
+
 # In-memory data store seeded with initial engineering internship tasks.
 tasks = [
     {
@@ -62,9 +56,8 @@ async def get_task(task_id: int):
             return task
     raise HTTPException(status_code=404, detail=f"Task {task_id} not found")
 
-# =============================================================================
 # Task 1 - STAGE 3: Create Operation (POST with Pydantic Validation & 201 Created)
-# =============================================================================
+
 # Request body schema for creating a task (title validation).
 class TaskCreate(BaseModel):
     title: str | None = None
@@ -86,9 +79,8 @@ async def create_task(task_input: TaskCreate):
     tasks.append(new_task)
     return new_task
 
-# =============================================================================
 # Task 1 - STAGE 4: Update & Delete Operations (PUT & DELETE with 204 No Content)
-# =============================================================================
+
 # Request body schema for updating task fields (title, done status, or both).
 class TaskUpdate(BaseModel):
     title: str | None = None
@@ -126,4 +118,3 @@ async def delete_task(task_id: int):
             return None
             
     raise HTTPException(status_code=404, detail=f"Task {task_id} not found")
-

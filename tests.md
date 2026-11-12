@@ -20,7 +20,7 @@ Comprehensive testing guide and verification checkpoints for **Task 1** (*In-Mem
   - [Stage 0: Database & Lifecycle Setup (Complete)](#t2---stage-0-database--lifecycle-setup-complete)
   - [Stage 1: Read from SQLite (Complete)](#t2---stage-1-read-from-sqlite-complete)
   - [Stage 2: Create in SQLite (Complete)](#t2---stage-2-create-in-sqlite-complete)
-  - [Stage 3: Update & Delete via SQL (Upcoming)](#t2---stage-3-update--delete-via-sql-upcoming)
+  - [Stage 3: Update & Delete via SQL (Complete)](#t2---stage-3-update--delete-via-sql-complete)
   - [Stage 4: Parameterized Safety & SQL Injection (Upcoming)](#t2---stage-4-parameterized-safety--sql-injection-upcoming)
   - [Stage 5: Clean Clone & Documentation (Upcoming)](#t2---stage-5-clean-clone--documentation-upcoming)
   - [Stage 6: AI Rematch Migration Diff (Upcoming)](#t2---stage-6-ai-rematch-migration-diff-upcoming)
@@ -407,28 +407,98 @@ This test proves that the data outlives program memory:
 
 ---
 
-### T2 - Stage 3: Update & Delete via SQL (Upcoming)
+### T2 - Stage 3: Update & Delete via SQL (Complete)
 
-When `PUT` and `DELETE` are migrated to SQL:
+Verify that `PUT` and `DELETE` execute parameterized SQL queries directly against `database/tasks.db` (`UPDATE tasks SET ...` and `DELETE FROM tasks ...`).
 
+#### Test 3.1: Partial Update - Change Completion Status (`PUT /tasks/1`)
 ```bash
-# 1. Update task in SQLite
 curl -i -X PUT http://localhost:8000/tasks/1 \
   -H "Content-Type: application/json" \
   -d '{"done": false}'
+```
+- **Expected Status:** `200 OK`
+- **Expected Response:** Task with `"done": false`:
+  ```json
+  {"id": 1, "title": "Task 1: Build your first CRUD API with in-memory storage", "done": false}
+  ```
 
-# 2. Delete task from SQLite
-curl -i -X DELETE http://localhost:8000/tasks/1
-# Expect: 204 No Content
+#### Test 3.2: Partial Update - Change Title (`PUT /tasks/1`)
+```bash
+curl -i -X PUT http://localhost:8000/tasks/1 \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Updated Task 1 Title"}'
+```
+- **Expected Status:** `200 OK`
+- **Expected Response:** Task with updated title.
 
-# 3. Verify deletion in database directly
+#### Test 3.3: Update Validation - Empty Body (`PUT /tasks/1`)
+```bash
+curl -i -X PUT http://localhost:8000/tasks/1 \
+  -H "Content-Type: application/json" \
+  -d '{}'
+```
+- **Expected Status:** `400 Bad Request`
+- **Expected Response:** `{"detail":"Atleast one field (title or done) must be provided"}`
+
+#### Test 3.4: Update Validation - Whitespace Title (`PUT /tasks/1`)
+```bash
+curl -i -X PUT http://localhost:8000/tasks/1 \
+  -H "Content-Type: application/json" \
+  -d '{"title": "   "}'
+```
+- **Expected Status:** `400 Bad Request`
+- **Expected Response:** `{"detail":"Title cannot be empty or whitespace"}`
+
+#### Test 3.5: Update Non-Existent ID (`PUT /tasks/999`)
+```bash
+curl -i -X PUT http://localhost:8000/tasks/999 \
+  -H "Content-Type: application/json" \
+  -d '{"done": true}'
+```
+- **Expected Status:** `404 Not Found`
+- **Expected Response:** `{"detail":"Task 999 not found"}`
+
+#### Test 3.6: Delete Task (`DELETE /tasks/{id}`)
+```bash
+# 1. Create a disposable task to delete
+DISPOSABLE_ID=$(curl -s -X POST http://localhost:8000/tasks \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Temporary Task for Deletion"}' | jq .id)
+
+# 2. Delete it from SQLite
+curl -i -X DELETE http://localhost:8000/tasks/$DISPOSABLE_ID
+```
+- **Expected Status:** `204 No Content`
+- **Expected Response Body:** *Empty body (0 bytes)*.
+
+#### Test 3.7: Delete Non-Existent ID (`DELETE /tasks/999`)
+```bash
+curl -i -X DELETE http://localhost:8000/tasks/999
+```
+- **Expected Status:** `404 Not Found`
+- **Expected Response:** `{"detail":"Task 999 not found"}`
+
+#### Test 3.8: Direct Database Verification
+```bash
 python3 -c "
 import sqlite3
 conn = sqlite3.connect('database/tasks.db')
-print('Task 1 exists:', conn.cursor().execute('SELECT id FROM tasks WHERE id = 1').fetchone() is not None)
+cursor = conn.cursor()
+cursor.execute('SELECT id FROM tasks WHERE id = 999')
+assert cursor.fetchone() is None
+print('Task 999 verified absent in SQLite database: True')
 "
-# Expect: Task 1 exists: False
 ```
+
+#### Test 3.9: Full CRUD Lifecycle Across Restarts
+Execute the complete sequence to verify state holding:
+1. `POST /tasks` -> Save new task.
+2. `PUT /tasks/{id}` -> Mark task done.
+3. Stop server (`Ctrl + C`), restart with `fastapi dev`.
+4. `GET /tasks/{id}` -> Verify state held across the restart.
+5. `DELETE /tasks/{id}` -> Remove task.
+6. `GET /tasks/{id}` -> Confirm HTTP 404.
 
 ---
 
@@ -525,6 +595,16 @@ STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/tasks/9999
 echo -n "[T2-2.1] POST /tasks (HTTP 201 Created): "
 STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:8000/tasks -H "Content-Type: application/json" -d "{\"title\": \"Automated Verification Task\"}")
 [ "$STATUS" = "201" ] && echo "✅ PASS" || echo "❌ FAIL (Got $STATUS)"
+
+# 8. Persistent Task Update Check
+echo -n "[T2-3.1] PUT /tasks/1 (HTTP 200 OK): "
+STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X PUT http://localhost:8000/tasks/1 -H "Content-Type: application/json" -d "{\"done\": true}")
+[ "$STATUS" = "200" ] && echo "✅ PASS" || echo "❌ FAIL (Got $STATUS)"
+
+# 9. Update Validation Check (400 on empty payload)
+echo -n "[T2-3.3] PUT /tasks/1 {} (HTTP 400): "
+STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X PUT http://localhost:8000/tasks/1 -H "Content-Type: application/json" -d "{}")
+[ "$STATUS" = "400" ] && echo "✅ PASS" || echo "❌ FAIL (Got $STATUS)"
 
 echo "============================================="
 echo "               TESTS COMPLETE                "

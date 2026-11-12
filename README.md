@@ -163,12 +163,12 @@ The project was delivered incrementally across 7 structured stages:
 | **0** | **Database & Lifespan Setup**: `database/tasks.db` created and seeded on startup via FastAPI `lifespan` | ✅ Complete |
 | **1** | **Read from SQLite**: `GET /tasks` & `GET /tasks/{id}` read live from `database/tasks.db` | ✅ Complete |
 | **2** | **Create in SQLite**: `POST /tasks` inserts rows into `tasks.db` with zero-trust validation & 201 Created | ✅ Complete |
-| **3** | Update & Delete via SQL | ⏳ Upcoming |
-| **4** | Parameterized Safety & SQL Injection | ⏳ Upcoming |
-| **5** | Clean Clone & Documentation | ⏳ Upcoming |
-| **6** | AI Rematch Migration Diff | ⏳ Upcoming |
+| **3** | **Update & Delete in SQL**: `PUT` & `DELETE` execute parameterized SQL on `tasks.db` with 200/204/404 | ✅ Complete |
+| **4** | Direct SQL Exploration & DB Browser Audit | ⏳ Upcoming |
+| **5** | Clean Clone Verification & Database Documentation | ⏳ Upcoming |
+| **6** | AI Rematch Migration Benchmark & Diff | ⏳ Upcoming |
 
-> `GET /tasks`, `GET /tasks/{id}`, and `POST /tasks` now execute directly on SQLite (`database/tasks.db`). Data persists across restarts. Update & Delete will migrate to SQL in Stage 3. See [`tests.md`](tests.md) for verification steps.
+> Full database persistence achieved! All 4 CRUD operations (`POST`, `GET`, `PUT`, `DELETE`) now execute parameterized SQL queries directly against SQLite (`database/tasks.db`). State outlives program memory. See [`tests.md`](tests.md) for full verification steps.
 
 ---
 
@@ -318,6 +318,7 @@ This project follows [Semantic Versioning 2.0.0](https://semver.org/). Every rel
 | `v1.1.0-alpha.1` | Task 2 Stage 0: SQLite database & lifespan setup |
 | `v1.1.0-alpha.2` | Task 2 Stage 1: Database read endpoints |
 | `v1.1.0-alpha.3` | Task 2 Stage 2: Create tasks in SQLite (`POST /tasks`) |
+| `v1.1.0-alpha.4` | Task 2 Stage 3: Full CRUD lifecycle in SQL (`PUT` & `DELETE`) |
 
 ```sh
 git tag -l                 # list versions

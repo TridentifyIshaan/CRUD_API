@@ -4,15 +4,10 @@ import sqlite3 # for db
 from pathlib import Path # for db path
 from contextlib import asynccontextmanager # for db connections
 
-# =============================================================================
-# Task 2: CRUD API with SQLite Database Storage
-# =============================================================================
-
-# =============================================================================
-# Task 2 - STAGE 0: Create Database & Lifecycle Setup
-# =============================================================================
-
 '''
+# Task 2: CRUD API with SQLite Database Storage
+## Task 2 - STAGE 0: Create Database & Lifecycle Setup
+
 A. Path to the SQLite database file (CRUD_API/database/tasks.db)
     1. __file__ is a special Python variable that holds the current file path.
     2. resolve() converts the file path to an absolute path.
@@ -22,15 +17,11 @@ A. Path to the SQLite database file (CRUD_API/database/tasks.db)
 '''
 DB_PATH = Path(__file__).resolve().parent.parent / "database" / "tasks.db"
 
-'''
-B. Database Connection Helper
-    1. conn = sqlite3.connect(DB_PATH) creates a connection to the database.
-    2. conn.row_factory = sqlite3.Row allows us to access rows as dictionaries to make search easy.
-'''
+# B. Database Connection Helper
 def get_db_connection() -> sqlite3.Connection:
     """Create a database connection with dictionary-like row access."""
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
+    conn = sqlite3.connect(DB_PATH) # creates a connection to the database.
+    conn.row_factory = sqlite3.Row # allows us to access rows as dictionaries to make search easy
     return conn
 
 '''
@@ -39,20 +30,16 @@ C. Create Table & Seed Tasks
     2. mkdir() creates the folder if it doesn't exist.
     3. parents=True allows us to create parent directories if they don't exist. 
     4. exist_ok=True prevents an error if the folder already exists.
-    5. get_db_connection() creates a connection to the database.
-    6. cursor = conn.cursor() creates a cursor to execute SQL commands.
-    7. with keyword is used for automatic closure of the database connection.
-    8. 0 means False, 1 means True
-    9. fetchone()[0] retrieves the first row's first column(count of tasks).
-    10. VALUES (?, ?) placeholder prevents SQL injection attacks.
+    5. with keyword is used for automatic closure of the database connection.
+    6. VALUES (?, ?) placeholder prevents SQL injection attacks.
 '''
 def init_db() -> None:
     """Initialize table and seed default tasks if empty."""
     # Ensure database/ folder exists
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 
-    with get_db_connection() as conn:
-        cursor = conn.cursor()
+    with get_db_connection() as conn: # creates a connection to the database
+        cursor = conn.cursor() # creates a cursor to execute SQL commands
 
         # 1. Create table if not exists
         cursor.execute("""
@@ -65,13 +52,13 @@ def init_db() -> None:
 
         # 2. Check current row count
         cursor.execute("SELECT COUNT(*) FROM tasks")
-        count = cursor.fetchone()[0]
+        count = cursor.fetchone()[0] # retrieves the first row's first column(count of tasks)
 
         # 3. Seed only when empty
         if count == 0:
             seed_tasks = [
-                ("Task 1: Build your first CRUD API with in-memory storage", 1),
-                ("Task 2: Connect CRUD API to SQLite database", 0),
+                ("Task 1: Build your first CRUD API with in-memory storage", 1), #True
+                ("Task 2: Connect CRUD API to SQLite database", 0), #False
             ]
             cursor.executemany(
                 "INSERT INTO tasks (title, done) VALUES (?, ?)",
@@ -82,11 +69,10 @@ def init_db() -> None:
 
 '''
 D. FastAPI lifespan
-    1. @asynccontextmanager decorator allows us to use lifespan in the FastAPI constructor.
-    2. yield: when application is starting up, init_db() runs, and the application pauses at yield until all startup tasks are completed.
-    3. After the application is running, the code after yield will run when the application is shutting down.
+    1. yield: when application is starting up, init_db() runs, and the application pauses at yield until all startup tasks are completed.
+    2. After the application is running, the code after yield will run when the application is shutting down.
 '''
-@asynccontextmanager
+@asynccontextmanager # allows us to use lifespan in the FastAPI constructor
 async def lifespan(app: FastAPI):
     """Application lifespan managing startup and shutdown routines."""
     print("Starting application: Initializing database...")
@@ -97,14 +83,12 @@ async def lifespan(app: FastAPI):
 # Initialize core FastAPI ASGI (Asynchronous Server Gateway Interface) application instance with database lifespan
 app = FastAPI(
     title="Task CRUD API (SQLite)",
-    version="1.1.0-alpha.3",
+    version="1.1.0-alpha.4",
     description="Asynchronous RESTful CRUD service for task management using SQLite database storage.",
     lifespan=lifespan #lifespan function
 )
 
-# =============================================================================
 # Discovery & Health Endpoints
-# =============================================================================
 @app.get("/")
 async def root():
     return {
@@ -117,9 +101,8 @@ async def root():
 async def health():
     return {"status": "ok"}
 
-# =============================================================================
 # Task 2 - STAGE 1: Database Read Endpoints
-# =============================================================================
+
 # Read all tasks from SQLite database
 @app.get("/tasks")
 async def get_tasks():
@@ -143,9 +126,8 @@ async def get_task(task_id: int):
             raise HTTPException(status_code=404, detail=f"Task {task_id} not found")
         return {"id": row["id"], "title": row["title"], "done": bool(row["done"])}
 
-# =============================================================================
 # Task 2 - STAGE 2: Create New Tasks (INSERT into SQLite)
-# =============================================================================
+
 # Model for incoming data (request body)
 class TaskCreate(BaseModel):
     title: str | None = None
@@ -173,3 +155,59 @@ async def create_task(task_input: TaskCreate):
         "title": cleaned_title,
         "done": False
     }
+
+# Task 2 - STAGE 3: Update and Delete with SQL
+# --------- UPDATE ---------
+
+# None = None allows partial updates where that field is optional
+class TaskUpdate(BaseModel):
+    title: str | None = None
+    done: bool | None = None
+
+@app.put("/tasks/{task_id}")
+async def update_task(task_id: int, task_update: TaskUpdate):
+    # 1. Validation: Atleast 1 field must be provided
+    if task_update.title is None and task_update.done is None:
+        raise HTTPException(status_code=400, detail="Atleast one field (title or done) must be provided")
+
+    # 2. Validation: If title provided, can't be empty or whitespace
+    if task_update.title is not None and not task_update.title.strip():
+        raise HTTPException(status_code=400, detail="Title cannot be empty or whitespace")
+
+    # 3. Check if task exists in SQLite
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, title, done FROM tasks WHERE id = ?", (task_id,))
+        existing_task = cursor.fetchone()
+        if existing_task is None:
+            raise HTTPException(status_code=404, detail=f"Task {task_id} not found")
+
+        # 4. Compute new values (keep old value if field wasn't sent)
+        new_title = task_update.title.strip() if task_update.title is not None else existing_task["title"]
+        new_done = int(task_update.done) if task_update.done is not None else existing_task["done"]
+
+        # 5. Execute SQL Update
+        cursor.execute(
+            "UPDATE tasks SET title = ?, done = ? WHERE id = ?", 
+            (new_title, new_done, task_id)
+        )
+        conn.commit()
+
+    return {
+        "id": task_id,
+        "title": new_title,
+        "done": bool(new_done)
+    }  
+
+# --------- DELETE ---------
+@app.delete("/tasks/{task_id}", status_code=204)
+async def delete_task(task_id: int):
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
+        conn.commit()
+
+        # If no row was deleted, ID was not found
+        if cursor.rowcount == 0:
+            raise HTTPException(status_code=404, detail=f"Task {task_id} not found")
+    return None
