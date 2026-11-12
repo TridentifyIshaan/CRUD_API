@@ -92,10 +92,12 @@ CRUD_API/
 ├── database/
 │   └── tasks.db         # SQLite store, auto-created on startup (git-ignored)
 ├── Docs/
-│   ├── Backend resources.html           # Companion lecture resources
-│   ├── Task API - Project Brief.pdf     # Engineering specification brief
-│   ├── Swagger.png                      # Verified Swagger UI screenshot
-│   └── Task API Database - Project Brief.pdf  # Task 2 (SQLite) specification
+│   ├── Backend resources.html                          # Companion resources
+│   ├── Task 1 API - Project Brief.pdf                  # Task 1 (in-memory) project brief
+│   ├── Task 2 API Database - Project Brief.pdf         # Task 2 (SQLite) project brief
+│   ├── Task 3 Containerize Stack - Project Brief.pdf   # Task 3 (Postgres + Docker) project brief
+│   ├── Task 4 Auth - Project Brief.pdf                 # Task 4 (Auth) project brief
+│   └── *.png                                           # Swagger UI and database screenshots
 ├── tests.md             # Test execution manual for Task 1 & Task 2
 ├── pyproject.toml       # FastAPI CLI entrypoint configuration
 ├── requirements.txt     # Pinned root dependencies (fastapi[standard])
