@@ -9,3 +9,4 @@ __pycache__/
 
 # SQLite runtime database (recreated on startup)
 database/*.db
+ai-version/*.db

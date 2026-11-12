@@ -23,7 +23,7 @@ Comprehensive testing guide and verification checkpoints for **Task 1** (*In-Mem
   - [Stage 3: Update & Delete via SQL (Complete)](#t2---stage-3-update--delete-via-sql-complete)
   - [Stage 4: Direct SQL Exploration by Hand (Complete)](#t2---stage-4-direct-sql-exploration-by-hand-complete)
   - [Stage 5: Clean Clone & Documentation (Complete)](#t2---stage-5-clean-clone--documentation-complete)
-  - [Stage 6: AI Rematch Migration Diff (Upcoming)](#t2---stage-6-ai-rematch-migration-diff-upcoming)
+  - [Stage 6: AI vs Me Migration Diff (Complete)](#t2---stage-6-ai-vs-me-migration-diff-complete)
 - [One-Click Automated Test Runner](#one-click-automated-test-runner)
 
 ---
@@ -579,11 +579,15 @@ Validate the **"Clean Clone / Stranger Test"** — proving that a developer who 
 
 ---
 
-### T2 - Stage 6: AI Rematch Migration Diff (Upcoming)
+### T2 - Stage 6: AI vs Me Migration Diff (Complete)
 ```bash
+# Run the quarantined AI version on a separate port (uses ai-version/tasks.db)
+uv run fastapi dev ai-version/main.py --port 8001
+# Diff storage code against the hand-built version
 git diff --no-index backend/main.py ai-version/main.py
 ```
-- Compare the database migration implementation against AI generated storage logic.
+- Re-run the Stage 2 and Stage 3 checkpoints against port 8001, restart it, and confirm seeds are not duplicated and data persists.
+- Task 1 AI version now lives at `ai-version/task1_main.py` (`git diff --no-index backend/task1_main.py ai-version/task1_main.py`).
 
 ---
 

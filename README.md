@@ -22,6 +22,7 @@ A lightweight, high-throughput asynchronous RESTful API engineered with **FastAP
 - [Interactive Documentation](#interactive-documentation)
 - [Direct SQL Database Inspection](#direct-sql-database-inspection)
 - [AI Rematch Analysis](#ai-rematch-analysis)
+- [AI vs Me (Task 2)](#ai-vs-me-task-2)
 - [Deployment](#deployment)
 - [Versioning and Releases](#versioning-and-releases)
 - [Proprietary License](#proprietary-license)
@@ -70,9 +71,11 @@ A lightweight, high-throughput asynchronous RESTful API engineered with **FastAP
 ```text
 CRUD_API/
 ├── backend/
-│   └── main.py          # Core API application with stage-annotated routes
+│   ├── main.py          # Task 2: hand-built SQLite CRUD API (default entrypoint)
+│   └── task1_main.py    # Task 1: hand-built in-memory CRUD API
 ├── ai-version/
-│   └── main.py          # Quarantined AI implementation for benchmark diff
+│   ├── main.py          # Task 2: quarantined AI SQLite migration (uses ai-version/tasks.db)
+│   └── task1_main.py    # Task 1: quarantined AI in-memory implementation
 ├── database/
 │   └── tasks.db         # SQLite store, auto-created on startup (git-ignored)
 ├── Docs/
@@ -176,6 +179,14 @@ uv run fastapi dev
 ```
 Runs at `http://127.0.0.1:8000` with instant directory watching and auto-reload on save.
 
+### Running Each Task and the AI Versions
+| Version | Command | Storage |
+| :--- | :--- | :--- |
+| Task 2 – hand-built (default) | `uv run fastapi dev` | `database/tasks.db` |
+| Task 1 – hand-built | `uv run fastapi dev backend/task1_main.py` | In-memory |
+| Task 2 – AI version | `uv run fastapi dev ai-version/main.py --port 8001` | `ai-version/tasks.db` |
+| Task 1 – AI version | `uv run fastapi dev ai-version/task1_main.py --port 8001` | In-memory |
+
 ### Production Mode
 ```sh
 uv run fastapi run --port 8000 --host 0.0.0.0
@@ -208,7 +219,7 @@ The project was delivered incrementally across 7 structured stages:
 | **3** | **Update & Delete in SQL**: `PUT` & `DELETE` execute parameterized SQL on `tasks.db` with 200/204/404 | ✅ Complete |
 | **4** | **Direct SQL Exploration**: 5 core SQL queries executed directly in SQLite CLI with screenshots | ✅ Complete |
 | **5** | **Clean Clone Verification & Documentation**: SQLite rationale, one-command boot, auto-provisioning | ✅ Complete |
-| **6** | **AI Rematch Migration Benchmark**: Prompting AI assistant in quarantine, AST diff, and code review | ⏳ Next |
+| **6** | **AI vs Me**: AI-generated SQLite migration in quarantine (`ai-version/main.py`), run, diffed & reviewed | ✅ Complete |
 
 > Full database persistence achieved! All 4 CRUD operations (`POST`, `GET`, `PUT`, `DELETE`) now execute parameterized SQL queries directly against SQLite (`database/tasks.db`). State outlives program memory. See [`tests.md`](tests.md) for full verification steps.
 
@@ -310,7 +321,7 @@ Deletes Task 3 directly from the database and confirms deletion by listing the r
 
 ## AI Rematch Analysis
 
-As an engineering experiment, an AI assistant was prompted to build the same API specification in quarantine inside [`ai-version/main.py`](ai-version/main.py) and diffed against our hand-crafted [`backend/main.py`](backend/main.py).
+As an engineering experiment, an AI assistant was prompted to build the same API specification in quarantine inside [`ai-version/task1_main.py`](ai-version/task1_main.py) and diffed against our hand-crafted [`backend/task1_main.py`](backend/task1_main.py).
 
 ### Specification Prompt Given
 ```text
@@ -342,6 +353,53 @@ Include Swagger docs at /docs.
 3. **What did the prompt forget to specify?**
    - The prompt did not specify response filtering, leading the AI to invent a separate response model.
    - The prompt omitted route function naming conventions, leading to prefixed names (`get_root`, `get_health`, `list_tasks`).
+
+---
+
+## AI vs Me (Task 2)
+
+For Task 2 Stage 6, an AI assistant was asked to perform the same in-memory → SQLite migration. Its output is quarantined in [`ai-version/main.py`](ai-version/main.py) and writes to its own `ai-version/tasks.db`, so the hand-built [`backend/main.py`](backend/main.py) and `database/tasks.db` stay untouched.
+
+### Prompt Written
+```text
+Migrate my in-memory FastAPI task API (Python, uv, stdlib sqlite3) to SQLite.
+Table `tasks`: id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, done boolean (0/1).
+Create the database file and the table if missing on startup (FastAPI lifespan).
+Seed three example tasks only when the table is empty, never on every restart.
+Keep GET /tasks, GET /tasks/{id}, POST /tasks, PUT /tasks/{id}, DELETE /tasks/{id} behaving identically:
+201 on create, 204 empty body on delete, 400 for missing/blank title or empty PUT body, 404 for unknown id,
+errors as JSON {"detail": ...}. Use parameterized ? placeholders for every query.
+```
+
+### Run Results
+| Check | Result |
+| :--- | :---: |
+| Starts on first try and creates `tasks.db` | ✅ |
+| Stage 2/3 checkpoints (201, 400 on blank title, 404 on unknown id) | ✅ |
+| PUT/DELETE (200, 204 empty body, 400, 404) | ✅ |
+| Seeds run once — restart does not duplicate examples | ✅ |
+| Data survives a restart | ✅ |
+
+Compare with: `git diff --no-index backend/main.py ai-version/main.py`
+
+### 1. What did it do better?
+- **Explicit transactions**: wraps writes in `with conn:` so create-table + seed commit atomically, and rolls back on error.
+- **Single-statement update**: `UPDATE ... SET title = COALESCE(?, title), done = COALESCE(?, done)` avoids a separate SELECT before writing and checks `rowcount` for the 404.
+- **Schema constraints**: `CHECK (done IN (0, 1))` and `CHECK (length(trim(title)) > 0)` enforce the rules in the database itself, not only in Python.
+- **Connections always closed**: `try/finally: conn.close()` — note that `with sqlite3.connect()` in my version only commits/rolls back; it does not close the connection.
+- **Typed responses** via `response_model=TaskResponse` and a shared `row_to_task` helper.
+
+### 2. What did it get wrong or quietly ignore?
+- **Dropped `async def`** again, using sync routes (FastAPI runs them in a thread pool — fine for blocking sqlite3, but inconsistent with my codebase).
+- **Changed the database location** to `ai-version/tasks.db` instead of `database/tasks.db` (intended here for quarantine, but a silent spec drift otherwise).
+- **Seed data replaced** with generic placeholder tasks and a third seed, versus my two project-specific seeds.
+- **`done` stored as `INTEGER`** rather than the declared `BOOLEAN` — functionally identical in SQLite, but a different declared type.
+- No string-glued SQL, no multiplying seeds, and no status code changes were found.
+
+### 3. What did my prompt forget to specify?
+- The exact database path, so the AI chose its own.
+- Whether routes should stay `async`, and connection-closing/transaction expectations.
+- The exact seed task titles, and the precise wording of error messages.
 
 ---
 
@@ -389,6 +447,7 @@ This project follows [Semantic Versioning 2.0.0](https://semver.org/). Every rel
 | `v1.1.0-alpha.4` | Task 2 Stage 3: Full CRUD lifecycle in SQL (`PUT` & `DELETE`) |
 | `v1.1.0-alpha.5` | Task 2 Stage 4: Direct SQL exploration & inspection screenshots |
 | `v1.1.0-alpha.6` | Task 2 Stage 5: Clean clone verification & database documentation |
+| `v1.1.0` | Task 2 complete: Stage 6 AI vs Me — stable SQLite release |
 
 ```sh
 git tag -l                 # list versions
