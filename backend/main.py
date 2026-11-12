@@ -93,7 +93,7 @@ async def lifespan(app: FastAPI):
 # Initialize core FastAPI application with database lifespan
 app = FastAPI(
     title="Task CRUD API (PostgreSQL + Docker)",
-    version="1.3.0-alpha.5",
+    version="1.3.0-alpha.6",
     description="Asynchronous RESTful CRUD service for task management using containerized PostgreSQL in Docker.",
     lifespan=lifespan
 )

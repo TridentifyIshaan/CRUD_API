@@ -149,32 +149,46 @@ SELECT * FROM tasks WHERE done = 1;
 
 ## Containerized Database (Docker & PostgreSQL)
 
-In Task 3, the storage engine upgrades from SQLite to **PostgreSQL** running inside an isolated **Docker** container, with data persistence managed via Docker volumes.
+In Task 3, the storage engine runs on **PostgreSQL 16** inside an isolated Docker container, orchestrated alongside the FastAPI application via **Docker Compose**.
 
-### Start PostgreSQL in One Command
+### One Command to Run Everything
 ```sh
-docker run --name taskdb \
-  -e POSTGRES_PASSWORD=dev \
-  -e POSTGRES_DB=tasks \
-  -p 5432:5432 \
-  -v taskdata:/var/lib/postgresql/data \
-  -d postgres:16
+# 1. Copy the environment configuration template
+cp .env.example .env
+
+# 2. Boot the full application and database stack
+docker compose up --build
 ```
 
-**Flag breakdown:**
-- `--name taskdb`: Names the running container `taskdb`.
-- `-e POSTGRES_PASSWORD=dev`: Sets the database password to `dev`.
-- `-e POSTGRES_DB=tasks`: Automatically creates a database named `tasks`.
-- `-p 5432:5432`: Maps port 5432 from container to host machine.
-- `-v taskdata:/var/lib/postgresql/data`: Attaches a persistent volume (`taskdata`) so database records survive container restarts.
-- `-d postgres:16`: Runs the official PostgreSQL 16 image in detached (background) mode.
+### Environment Configuration (.env.example)
+Database credentials are never committed. Variables are configured in `.env` (derived from `.env.example`):
+- `POSTGRES_USER`: Database user account.
+- `POSTGRES_PASSWORD`: Database password.
+- `POSTGRES_DB`: Database name.
+- `DATABASE_URL`: Connection string automatically passed to the FastAPI container (`postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}`).
 
-### Accessing the SQL Prompt
-```sh
-docker exec -it taskdb psql -U postgres -d tasks
+### Sample Verification (`curl -i`)
+```text
+$ curl -i http://localhost:8000/tasks
+HTTP/1.1 200 OK
+content-type: application/json
+
+[
+  {"id":1,"title":"Task 1: Build CRUD API with in-memory storage","done":true},
+  {"id":2,"title":"Task 2: Connect CRUD API to SQLite database","done":true},
+  {"id":3,"title":"Task 3: Containerise the project stack with Docker","done":false}
+]
 ```
-- Run `\dt` to inspect tables.
-- Run `\q` to exit back to terminal.
+
+### Database Inspection
+The `tasks` table and seeded records inspected directly inside the PostgreSQL container:
+
+![PostgreSQL Database Inspection](Docs/postgres_table.png)
+
+Execute queries inside the container via `docker compose`:
+```sh
+docker compose exec db bash -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "\dt" -c "SELECT * FROM tasks;"'
+```
 
 ---
 
@@ -270,8 +284,8 @@ The project was delivered incrementally across 7 structured stages:
 | **2** | **Read from Postgres**: `GET /tasks` & `GET /tasks/{id}` with parameterized queries (`%s`) | ✅ Complete |
 | **3** | **Full CRUD on Postgres**: `POST`, `PUT`, `DELETE` with `RETURNING *` and status codes | ✅ Complete |
 | **4** | **Docker Compose Stack**: `compose.yaml` linking API and Postgres services | ✅ Complete |
-| **5** | **One-Command Stack & Docs**: Verified single-command boot, `.env.example`, documentation | ⏳ Next |
-| **6** | **AI Rematch**: Quarantined containerized migration diff and code review | ⏳ Upcoming |
+| **5** | **One-Command Stack & Docs**: Verified single-command boot, `.env.example`, documentation | ✅ Complete |
+| **6** | **AI Rematch**: Quarantined containerized migration diff and code review | ⏳ Next |
 
 > Full database persistence achieved! All 4 CRUD operations (`POST`, `GET`, `PUT`, `DELETE`) execute against SQLite (`database/tasks.db`), now transitioning to containerized PostgreSQL in Docker. See [`tests.md`](tests.md) for full verification steps.
 
@@ -572,6 +586,7 @@ This project follows [Semantic Versioning 2.0.0](https://semver.org/). Every rel
 | `v1.3.0-alpha.3` | Task 3 Stage 2: Read from Postgres |
 | `v1.3.0-alpha.4` | Task 3 Stage 3: Full CRUD on Postgres |
 | `v1.3.0-alpha.5` | Task 3 Stage 4: Docker Compose the whole stack |
+| `v1.3.0-alpha.6` | Task 3 Stage 5: One-command stack & docs |
 
 ```sh
 git tag -l                 # list versions

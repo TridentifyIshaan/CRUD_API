@@ -30,7 +30,7 @@ Comprehensive testing guide and verification checkpoints for **Task 1** (*In-Mem
   - [Stage 2: Read from Postgres (Complete)](#t3---stage-2-read-from-postgres-complete)
   - [Stage 3: Full CRUD on Postgres (Complete)](#t3---stage-3-full-crud-on-postgres-complete)
   - [Stage 4: Docker Compose the Whole Stack (Complete)](#t3---stage-4-docker-compose-the-whole-stack-complete)
-  - [Stage 5: One-Command Stack & Docs (Upcoming)](#t3---stage-5-one-command-stack--docs-upcoming)
+  - [Stage 5: One-Command Stack & Docs (Complete)](#t3---stage-5-one-command-stack--docs-complete)
   - [Stage 6: AI Rematch (Upcoming)](#t3---stage-6-ai-rematch-upcoming)
 - [One-Click Automated Test Runner](#one-click-automated-test-runner)
 
@@ -826,6 +826,35 @@ curl -i http://localhost:8000/tasks
    curl -s http://localhost:8000/tasks
    ```
 - **Assertion:** The newly created task (`"Docker Compose Stack Works"`) remains present, proving volume durability across full-stack rebuilds and restarts.
+
+---
+
+### T3 - Stage 5: One-Command Stack & Docs (Complete)
+
+Verify that a clean clone boots the entire stack in one command and serves seeded tasks with zero manual database intervention:
+
+#### Test 5.1: Clean Clone Round-Trip Checkpoint
+1. Tear down the stack and wipe volumes:
+   ```bash
+   docker compose down -v
+   ```
+2. Run the single boot command:
+   ```bash
+   docker compose up -d --build
+   ```
+3. Verify immediate response from API:
+   ```bash
+   curl -i http://localhost:8000/tasks
+   ```
+- **Assertion:** Returns `HTTP/1.1 200 OK` with 3 seeded tasks in under 15 seconds.
+
+#### Test 5.2: Documentation Verification
+Confirm that `README.md` documents:
+- [x] Description of the containerized stack.
+- [x] One documented command to run everything (`cp .env.example .env && docker compose up --build`).
+- [x] Environment variable definitions referencing `.env.example`.
+- [x] Endpoint table and sample `curl -i` output.
+- [x] Database inspection screenshot reference (`Docs/postgres_table.png`).
 
 ---
 
