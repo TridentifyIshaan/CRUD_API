@@ -933,9 +933,9 @@ echo "============================================="
 
 ### T3 - Stage 6: AI vs Me Containerized Stack (Complete)
 ```bash
-# Run the quarantined AI stack (API :8001, Postgres :5433, volume ai_taskdata)
+# Run the quarantined AI stack (API :8001, volume ai_taskdata; Postgres not published)
 docker compose -f ai-version/compose.yaml --env-file .env up --build -d
-curl -i http://localhost:8001/health      # {"status":"ok","db":"ok"}
+curl -i http://localhost:8001/health      # {"status":"ok"}
 curl -i http://localhost:8001/tasks       # 200 + three seeded tasks
 curl -i http://localhost:8001/tasks/999   # 404 {"error":"Task not found"}
 # Persistence: create a task, then down/up and list again

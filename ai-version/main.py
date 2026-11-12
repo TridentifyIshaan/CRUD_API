@@ -2,9 +2,11 @@
 
 AI-generated migration of the Task API from SQLite to containerized PostgreSQL,
 kept in quarantine and benchmarked against the hand-built backend/main.py.
-Runs with its own compose file (ai-version/compose.yaml), its own ports
-(API 8001, Postgres 5433) and its own volume, so it never touches the
-hand-built stack. Task 2's AI version is preserved in ai-version/task2_main.py.
+Round 2 (rematch): regenerated from the improved prompt in the README —
+/health returns exactly {"status": "ok"} and Postgres is not published to the
+host. Round 1 is preserved at git tag v1.3.0.
+Runs with its own compose file (ai-version/compose.yaml), API port 8001 and
+its own volume, so it never touches the hand-built stack. Task 2's AI version is preserved in ai-version/task2_main.py.
 
 Run: docker compose -f ai-version/compose.yaml --env-file .env up --build
 """
@@ -97,15 +99,6 @@ def db_delete(task_id: int) -> bool:
         return conn.execute("DELETE FROM tasks WHERE id = %s", (task_id,)).rowcount > 0
 
 
-def db_ping() -> bool:
-    try:
-        with get_connection() as conn:
-            conn.execute("SELECT 1")
-        return True
-    except psycopg.Error:
-        return False
-
-
 # --- HTTP layer -----------------------------------------------------------------
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -164,11 +157,7 @@ async def get_root():
 
 @app.get("/health")
 async def get_health():
-    # Health check that also pings Postgres: a load balancer stops routing
-    # traffic to an instance whose database is unreachable.
-    if not db_ping():
-        return JSONResponse(status_code=503, content={"status": "error", "db": "down"})
-    return {"status": "ok", "db": "ok"}
+    return {"status": "ok"}
 
 
 @app.get("/tasks", response_model=List[TaskResponse])

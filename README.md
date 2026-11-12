@@ -81,7 +81,7 @@ CRUD_API/
 ├── ai-version/
 │   ├── main.py          # Task 3: quarantined AI Postgres migration (own compose stack, port 8001)
 │   ├── Dockerfile       # Task 3: AI multi-stage image
-│   ├── compose.yaml     # Task 3: AI stack (api :8001, db :5433, volume ai_taskdata)
+│   ├── compose.yaml     # Task 3: AI stack (api :8001, db internal only, volume ai_taskdata)
 │   ├── task2_main.py    # Task 2: quarantined AI SQLite migration, rematch round (uses ai-version/tasks.db)
 │   └── task1_main.py    # Task 1: quarantined AI in-memory implementation
 ├── tests/
@@ -520,7 +520,7 @@ In ai-version/main.py, migrate my in-memory FastAPI Task API (Python, uv, stdlib
 
 ## AI vs Me (Task 3)
 
-For Task 3 Stage 6, an AI assistant was asked to containerize the same API onto PostgreSQL. Its output is quarantined in [`ai-version/`](ai-version/): [`main.py`](ai-version/main.py), [`Dockerfile`](ai-version/Dockerfile) and [`compose.yaml`](ai-version/compose.yaml). It runs as its own Compose project (`crud-api-ai`) on API port `8001`, Postgres port `5433` and volume `ai_taskdata`, so the hand-built stack (`compose.yaml`, `dockerfile`, `backend/main.py`, volume `taskdata`) is untouched. The Task 2 AI file was renamed to `ai-version/task2_main.py`.
+For Task 3 Stage 6, an AI assistant was asked to containerize the same API onto PostgreSQL. Its output is quarantined in [`ai-version/`](ai-version/): [`main.py`](ai-version/main.py), [`Dockerfile`](ai-version/Dockerfile) and [`compose.yaml`](ai-version/compose.yaml). It runs as its own Compose project (`crud-api-ai`) on API port `8001` and volume `ai_taskdata` (Postgres is reachable only inside that Compose network), so the hand-built stack (`compose.yaml`, `dockerfile`, `backend/main.py`, volume `taskdata`) is untouched. The Task 2 AI file was renamed to `ai-version/task2_main.py`.
 
 ### Round 1 Prompt
 ```text
@@ -597,7 +597,9 @@ In ai-version/, containerize my FastAPI Task API (Python, uv, psycopg 3) onto Po
   published to the host), named volume ai_taskdata, credentials from the root .env, depends_on the db healthcheck.
 ```
 
-**What changed:** with `/health`'s shape and the unpublished database port pinned down, the remaining differences are the deliberate improvements (multi-stage non-root image, fail-fast `.env`, repository functions) rather than silent contract drift.
+**What changed:** after regenerating from the rematch prompt, `/health` returns exactly `{"status":"ok"}` again and Postgres is no longer published to the host, so the only differences left from my stack are deliberate improvements (multi-stage non-root image, fail-fast `.env`, repository functions, single-statement `COALESCE` update) rather than silent contract drift. Round 1 is preserved at tag `v1.3.0` (`git show v1.3.0:ai-version/main.py`).
+
+Rematch re-run: `docker compose up` worked first try; `201`/`200`/`204`/`400`/`404` all correct; `db` shows no host port; data survived `down` → `up` without re-seeding.
 
 ---
 
@@ -682,6 +684,7 @@ This project follows [Semantic Versioning 2.0.0](https://semver.org/). Every rel
 | `v1.3.0-alpha.5` | Task 3 Stage 4: Docker Compose the whole stack |
 | `v1.3.0-alpha.6` | Task 3 Stage 5: One-command stack & docs |
 | `v1.3.0` | Task 3 complete: Stage 6 AI vs Me — stable containerized Postgres release |
+| `v1.3.1` | Task 3 AI rematch: regenerated AI stack (`/health` contract restored, Postgres not published) |
 
 ```sh
 git tag -l                 # list versions

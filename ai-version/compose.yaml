@@ -1,5 +1,5 @@
-# AI version (Task 3) — quarantined stack. Uses its own project name, ports
-# (API 8001, Postgres 5433) and volume so it never collides with the hand-built
+# AI version (Task 3) — quarantined stack. Uses its own project name, API port
+# 8001 and volume (Postgres is reachable only on the compose network) so it never collides with the hand-built
 # stack in ../compose.yaml. Credentials come from the root .env:
 #   docker compose -f ai-version/compose.yaml --env-file .env up --build
 name: crud-api-ai
@@ -24,8 +24,6 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
-    ports:
-      - "5433:5432"
     volumes:
       - ai_taskdata:/var/lib/postgresql/data
     healthcheck:
