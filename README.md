@@ -165,7 +165,7 @@ docker run --name taskdb \
 - `--name taskdb`: Names the running container `taskdb`.
 - `-e POSTGRES_PASSWORD=dev`: Sets the database password to `dev`.
 - `-e POSTGRES_DB=tasks`: Automatically creates a database named `tasks`.
-- `-p 5432:5432`: Maps port 5432 from container to your host machine.
+- `-p 5432:5432`: Maps port 5432 from container to host machine.
 - `-v taskdata:/var/lib/postgresql/data`: Attaches a persistent volume (`taskdata`) so database records survive container restarts.
 - `-d postgres:16`: Runs the official PostgreSQL 16 image in detached (background) mode.
 
@@ -266,8 +266,8 @@ The project was delivered incrementally across 7 structured stages:
 | Stage | Milestone | Status |
 | :---: | :--- | :---: |
 | **0** | **Postgres in Docker & gitignore**: `taskdb` container on port 5432 with volume `taskdata` | ✅ Complete |
-| **1** | **Connect via .env & Create Table**: `.env` configuration, `psycopg` driver, table creation & seeding | ⏳ Next |
-| **2** | **Read from Postgres**: `GET /tasks` & `GET /tasks/{id}` with parameterized queries (`%s`) | ⏳ Upcoming |
+| **1** | **Connect via .env & Create Table**: `.env` configuration, `psycopg` driver, table creation & seeding | ✅ Complete |
+| **2** | **Read from Postgres**: `GET /tasks` & `GET /tasks/{id}` with parameterized queries (`%s`) | ⏳ Next |
 | **3** | **Full CRUD on Postgres**: `POST`, `PUT`, `DELETE` with `RETURNING *` and status codes | ⏳ Upcoming |
 | **4** | **Docker Compose Stack**: `compose.yaml` linking API and Postgres services | ⏳ Upcoming |
 | **5** | **One-Command Stack & Docs**: Verified single-command boot, `.env.example`, documentation | ⏳ Upcoming |
@@ -430,7 +430,7 @@ Review and complete Stage 6: "AI vs Me" in the repository.
 - Rename ai-version/main.py to ai-version/task1_main.py.
 - Create a new main.py for Task 2, implementing the requirements for that task.
 - Update the README to accurately document the changes and how to run both tasks.
-- Run relevant tests or checks, and resolve any issues introduced by your changes.
+- Run relevant tests or checks, and resolve any issues introduced by the changes.
 
 Once the work is complete, stage and commit the changes with a clear, appropriate commit message. Create and push a properly named stable release tag; this is not a pre-release. Push the commit and tag to the configured remote.
 
@@ -478,7 +478,7 @@ In ai-version/main.py, migrate my in-memory FastAPI Task API (Python, uv, stdlib
 - Database file ai-version/tasks.db, created with its folder if missing; table `tasks`
   (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, done stored as 0/1), created if missing.
 - Seed exactly these three tasks, only when the table is empty, in one transaction:
-  "Task 1: Build your first CRUD API with in-memory storage" (done),
+  "Task 1: Build first CRUD API with in-memory storage" (done),
   "Task 2: Connect CRUD API to SQLite database" (done),
   "Task 3: Containerise the project stack with Docker" (not done).
 - Keep GET /, GET /health, GET /tasks, GET /tasks/{id}, POST /tasks, PUT /tasks/{id}, DELETE /tasks/{id}
@@ -568,6 +568,7 @@ This project follows [Semantic Versioning 2.0.0](https://semver.org/). Every rel
 | `v1.1.0` | Task 2 complete: Stage 6 AI vs Me — stable SQLite release |
 | `v1.2.0` | Extras, error format, AI rematch, shared test suite |
 | `v1.3.0-alpha.1` | Task 3 Stage 0: Postgres in Docker & gitignore |
+| `v1.3.0-alpha.2` | Task 3 Stage 1: Connect via .env and create table |
 
 ```sh
 git tag -l                 # list versions

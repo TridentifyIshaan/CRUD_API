@@ -26,7 +26,7 @@ Comprehensive testing guide and verification checkpoints for **Task 1** (*In-Mem
   - [Stage 6: AI vs Me Migration Diff (Complete)](#t2---stage-6-ai-vs-me-migration-diff-complete)
 - [Task 3: Containerized PostgreSQL & Docker (T3)](#task-3-containerized-postgresql--docker-t3)
   - [Stage 0: Postgres in Docker & gitignore (Complete)](#t3---stage-0-postgres-in-docker--gitignore-complete)
-  - [Stage 1: Connect via .env & Create Table (Upcoming)](#t3---stage-1-connect-via-env--create-table-upcoming)
+  - [Stage 1: Connect via .env & Create Table (Complete)](#t3---stage-1-connect-via-env--create-table-complete)
   - [Stage 2: Read from Postgres (Upcoming)](#t3---stage-2-read-from-postgres-upcoming)
   - [Stage 3: Full CRUD on Postgres (Upcoming)](#t3---stage-3-full-crud-on-postgres-upcoming)
   - [Stage 4: Docker Compose the Whole Stack (Upcoming)](#t3---stage-4-docker-compose-the-whole-stack-upcoming)
@@ -279,7 +279,7 @@ Table DDL:
 )
 
 Total rows: 3
-Row 1: title="Task 1: Build your first CRUD API with in-memory storage", done=1
+Row 1: title="Task 1: Build CRUD API with in-memory storage", done=1
 Row 2: title="Task 2: Connect CRUD API to SQLite database", done=1
 Row 3: title="Task 3: Containerise the project stack with Docker", done=0
 ```
@@ -299,7 +299,7 @@ Proves that tasks do **not duplicate** when the application boots repeatedly:
 - **Assertion:** The count must remain **identical** before and after (e.g., `3 == 3`).
 
 #### Test 0.3: Clean Clone / Self-Healing Test
-Proves that a stranger cloning your repo gets a working database with zero manual setup:
+Proves that a fresh clone provides a working database with zero manual setup:
 
 ```bash
 # 1. Delete the database file
@@ -334,7 +334,7 @@ curl -i http://localhost:8000/tasks
 - **Expected Response:** JSON array with all tasks and boolean `"done"` status:
   ```json
   [
-    {"id": 1, "title": "Task 1: Build your first CRUD API with in-memory storage", "done": true},
+    {"id": 1, "title": "Task 1: Build CRUD API with in-memory storage", "done": true},
     {"id": 2, "title": "Task 2: Connect CRUD API to SQLite database", "done": false}
   ]
   ```
@@ -346,7 +346,7 @@ curl -i http://localhost:8000/tasks/1
 - **Expected Status:** `200 OK`
 - **Expected Response:**
   ```json
-  {"id": 1, "title": "Task 1: Build your first CRUD API with in-memory storage", "done": true}
+  {"id": 1, "title": "Task 1: Build CRUD API with in-memory storage", "done": true}
   ```
 
 #### Test 1.3: Fetch Non-Existent Task (`GET /tasks/999`)
@@ -405,7 +405,7 @@ This test proves that the data outlives program memory:
      -H "Content-Type: application/json" \
      -d '{"title": "I will survive server restarts"}'
    ```
-2. Stop your server by pressing `Ctrl + C` in the server terminal.
+2. Stop the server by pressing `Ctrl + C` in the server terminal.
 3. Start the server again:
    ```bash
    fastapi dev
@@ -431,7 +431,7 @@ curl -i -X PUT http://localhost:8000/tasks/1 \
 - **Expected Status:** `200 OK`
 - **Expected Response:** Task with `"done": false`:
   ```json
-  {"id": 1, "title": "Task 1: Build your first CRUD API with in-memory storage", "done": false}
+  {"id": 1, "title": "Task 1: Build CRUD API with in-memory storage", "done": false}
   ```
 
 #### Test 3.2: Partial Update - Change Title (`PUT /tasks/1`)
@@ -639,7 +639,7 @@ docker exec -it taskdb psql -U postgres -d tasks
 ```
 - Inside the PostgreSQL interactive shell:
   - Run `\dt` -> Expect `Did not find any relations.` (clean database initialized).
-  - Run `\q` -> Successfully exits shell back to your terminal.
+  - Run `\q` -> Successfully exits shell back to terminal.
 
 #### Test 0.4: Secret Protection (.gitignore)
 ```bash
@@ -649,9 +649,56 @@ git check-ignore -v .env
 
 ---
 
+### T3 - Stage 1: Connect via .env & Create Table (Complete)
+
+Verify that the FastAPI application connects to containerized PostgreSQL using secrets from `.env` and automatically initializes the `tasks` schema and seed data on startup:
+
+#### Test 1.1: Driver & Dependency Installation Check
+```bash
+python3 -c "import psycopg, dotenv; print('Dependencies ready!')"
+```
+- **Assertion:** Prints `Dependencies ready!` without import errors.
+
+#### Test 1.2: Startup Auto-Creation & Seeding
+1. Start the FastAPI development server:
+   ```bash
+   fastapi dev
+   ```
+2. Check terminal startup logs:
+   ```text
+   Starting application: Initializing PostgreSQL database...
+   ✅ PostgreSQL database initialized and seeded with 3 tasks.
+   INFO:     Application startup complete.
+   ```
+
+#### Test 1.3: PostgreSQL Schema & Table Check
+In another terminal, inspect the containerized PostgreSQL database directly:
+```bash
+docker exec -it taskdb psql -U postgres -d tasks -c "\dt"
+```
+- **Assertion:** Lists `public | tasks | table | postgres`.
+
+#### Test 1.4: PostgreSQL Seed Verification Check
+```bash
+docker exec -it taskdb psql -U postgres -d tasks -c "SELECT id, title, done FROM tasks;"
+```
+- **Assertion:** Displays 3 rows:
+  - `1 | Task 1: Build CRUD API with in-memory storage | t`
+  - `2 | Task 2: Connect CRUD API to SQLite database | t`
+  - `3 | Task 3: Containerise the project stack with Docker | f`
+
+#### Test 1.5: Idempotency Check (Restart 3 Times)
+Restart the server 3 times (`Ctrl + C`, then `fastapi dev`) and re-run:
+```bash
+docker exec -it taskdb psql -U postgres -d tasks -c "SELECT COUNT(*) FROM tasks;"
+```
+- **Assertion:** Count remains strictly `3` (seeds never duplicate).
+
+---
+
 ## One-Click Automated Test Runner
 
-Save the following test runner or execute it directly in your terminal to validate the currently active server and database state:
+Save the following test runner or execute it directly in terminal to validate the active server and database state:
 
 ```bash
 bash -c '

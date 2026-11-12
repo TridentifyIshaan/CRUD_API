@@ -133,7 +133,7 @@ def test_filter_search_sort(db_path):
         assert done and all(t["done"] for t in done)
         assert all(not t["done"] for t in c.get("/tasks", params={"done": "false"}).json())
         assert [t["title"] for t in c.get("/tasks", params={"search": "crud"}).json()] == [
-            "Task 1: Build your first CRUD API with in-memory storage",
+            "Task 1: Build CRUD API with in-memory storage",
             "Task 2: Connect CRUD API to SQLite database",
             "alpha CRUD",
         ]

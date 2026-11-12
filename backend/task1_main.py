@@ -33,7 +33,7 @@ async def health():
 tasks = [
     {
         "id": 1, 
-        "title": "Task 1: Build your first CRUD API with in-memory storage", 
+        "title": "Task 1: Build CRUD API with in-memory storage", 
         "done": True
     },
     {

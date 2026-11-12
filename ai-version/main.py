@@ -22,7 +22,7 @@ from pydantic import BaseModel
 DB_PATH = Path(__file__).resolve().parent / "tasks.db"
 
 SEED_TASKS = [
-    ("Task 1: Build your first CRUD API with in-memory storage", 1),
+    ("Task 1: Build CRUD API with in-memory storage", 1),
     ("Task 2: Connect CRUD API to SQLite database", 1),
     ("Task 3: Containerise the project stack with Docker", 0),
 ]
