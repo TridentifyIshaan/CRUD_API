@@ -14,6 +14,7 @@ A lightweight, high-throughput asynchronous RESTful API engineered with **FastAP
 - [Key Engineering Feats](#key-engineering-feats)
 - [Architecture and Request Flow](#architecture-and-request-flow)
 - [Repository Structure](#repository-structure)
+- [Database Architecture & SQLite Persistence](#database-architecture--sqlite-persistence)
 - [Quickstart and Setup](#quickstart-and-setup)
 - [Running the Server](#running-the-server)
 - [Implementation Roadmap](#implementation-roadmap)
@@ -29,14 +30,14 @@ A lightweight, high-throughput asynchronous RESTful API engineered with **FastAP
 
 ## Key Engineering Feats
 
-Quantifiable achievements and metrics ready for resume bullet points:
-
-- **Sub-5ms Latency & High Throughput**: Built native `async/await` non-blocking route handlers on Starlette/Uvicorn ASGI, sustaining **1,500+ RPS** with sub-5ms p95 response times on in-memory operations and a lean **~28 MB** base runtime footprint.
-- **10x–50x Faster Dependency Resolution**: Replaced legacy `pip` with Astral's **uv**, cutting virtual environment creation and package installation time from ~10 seconds down to **< 200 milliseconds**.
-- **100% Strict HTTP Status Compliance**: Implemented all 4 CRUD verbs across **7 discrete endpoints**, strictly adhering to REST status standards: `200 OK` (reads/updates), `201 Created` (resource creation), `204 No Content` (deletion with empty body), `400 Bad Request` (payload validation), and `404 Not Found` (missing IDs).
-- **Zero-Trust Input Validation**: Engineered Pydantic validation schemas with custom whitespace stripping and boundary checks, achieving **100% rejection of malformed or empty payloads** prior to application state mutation.
-- **Automated Contract Documentation**: Auto-generated OpenAPI 3.1 schemas and live interactive Swagger UI/ReDoc interfaces with zero manual upkeep overhead.
-- **AI Code Review & Spec-First Engineering**: Benchmarked hand-crafted code against an LLM-generated implementation in quarantine, identifying **3 critical architectural flaws** in the AI model (synchronous thread-pool offloading, generic data structures, and lack of typed response filtering).
+- **Permanent Data Storage**: Upgraded from temporary memory to a real SQLite database (`tasks.db`). Tasks now permanently survive server restarts and shutdowns.
+- **Built-in Security**: Uses safe parameterized queries for all database actions, fully protecting the application from SQL injection attacks.
+- **Zero-Setup Startup**: The database and starter tasks are automatically created when the server launches. Anyone can clone and run the app with a single command.
+- **Fast & Lightweight**: Handles requests in under 5 milliseconds with a lean ~28 MB memory footprint using asynchronous FastAPI.
+- **Instant Project Setup**: Powered by Astral `uv`, setting up dependencies in under 1 second (over 10x faster than traditional tools).
+- **Reliable Input Validation**: Automatically inspects incoming data, rejecting empty or invalid inputs before they touch the database.
+- **Clear REST Standards**: Strictly adheres to standard HTTP status codes (`200 OK`, `201 Created`, `204 No Content`, `400 Bad Request`, `404 Not Found`) for seamless client integration.
+- **Interactive Live Docs**: Automatically generates live, clickable Swagger UI documentation at `/docs` for easy testing in the browser.
 
 ---
 
@@ -93,6 +94,46 @@ Configured in `pyproject.toml` so `fastapi dev` boots directly from root:
 [tool.fastapi]
 entrypoint = "backend.main:app"
 ```
+
+---
+
+## Database Architecture & SQLite Persistence
+
+In Task 2, application persistence was migrated from an ephemeral in-memory Python list to an ACID-compliant **SQLite** database (`database/tasks.db`).
+
+### Why SQLite Was Chosen
+- **Single-File Architecture**: The complete database schema, table definitions, indexes, and row data reside entirely inside a single compact file (`database/tasks.db`).
+- **Zero-Config & Serverless**: Unlike client-server engines (PostgreSQL, MySQL), SQLite is embedded in-process. There is no external daemon to install, no port conflicts, no connection credentials to configure, and zero operational overhead.
+- **Persistence Across Restarts**: Application state outlives the runtime process. Terminating, upgrading, or restarting the FastAPI server preserves all existing records on disk.
+- **Production-Grade ACID Guarantees**: SQLite provides atomic commits, isolated transactions, and full SQL compliance with parameterized query support (`?` placeholders) to eliminate SQL injection risks.
+
+### Database Location & Automatic Lifecycle
+- **File Path**: The database file is resolved dynamically at `database/tasks.db` relative to the project root.
+- **Auto-Creation via Lifespan**: When the server starts up, FastAPI's `@asynccontextmanager` `lifespan` handler triggers `init_db()`. If `database/tasks.db` or its parent directory does not exist, SQLite automatically creates the directory, initializes the database file, applies the `CREATE TABLE IF NOT EXISTS tasks` schema, and idempotently seeds initial tasks if the table row count is `0`.
+- **Git-Ignored (`.gitignore`)**: `database/*.db` is explicitly ignored by version control. This ensures developer runtime data is never committed, and any fresh repository clone generates a pristine database deterministically.
+
+### Single-Command Quickstart ("The Stranger Test")
+Any developer can clone this repository and have a fully seeded, functioning database API running in seconds with **one command**:
+
+```sh
+# One command to start from project root:
+fastapi dev
+# (or with Astral uv):
+uv run fastapi dev
+```
+
+> **Clean Clone Guarantee**: Deleting `database/tasks.db` and running `fastapi dev` automatically recreates the database and seeds default tasks with zero manual steps.
+
+### Database Table Inspection
+The `tasks` table schema and seeded rows inspected directly in SQLite table mode (`.mode table`):
+
+![SQLite Database Inspection](Docs/sql_select_all.png)
+
+```sql
+-- Example SQL query executed in Stage 4:
+SELECT * FROM tasks WHERE done = 1;
+```
+*Output: Returns only completed tasks where `done = 1`.*
 
 ---
 
@@ -157,7 +198,7 @@ The project was delivered incrementally across 7 structured stages:
 | **6** | **GitHub Delivery** | ≥ 6 meaningful stage commits & documentation | N/A | ✅ Complete |
 | **7** | **AI Rematch Benchmark** | Quarantined AI generation & architectural diff | N/A | ✅ Complete |
 
-### Task 2: SQLite Persistence (In Progress)
+### Task 2: SQLite Persistence
 
 | Stage | Milestone | Status |
 | :---: | :--- | :---: |
@@ -166,8 +207,8 @@ The project was delivered incrementally across 7 structured stages:
 | **2** | **Create in SQLite**: `POST /tasks` inserts rows into `tasks.db` with zero-trust validation & 201 Created | ✅ Complete |
 | **3** | **Update & Delete in SQL**: `PUT` & `DELETE` execute parameterized SQL on `tasks.db` with 200/204/404 | ✅ Complete |
 | **4** | **Direct SQL Exploration**: 5 core SQL queries executed directly in SQLite CLI with screenshots | ✅ Complete |
-| **5** | Clean Clone Verification & Database Documentation | ⏳ Upcoming |
-| **6** | AI Rematch Migration Benchmark & Diff | ⏳ Upcoming |
+| **5** | **Clean Clone Verification & Documentation**: SQLite rationale, one-command boot, auto-provisioning | ✅ Complete |
+| **6** | **AI Rematch Migration Benchmark**: Prompting AI assistant in quarantine, AST diff, and code review | ⏳ Next |
 
 > Full database persistence achieved! All 4 CRUD operations (`POST`, `GET`, `PUT`, `DELETE`) now execute parameterized SQL queries directly against SQLite (`database/tasks.db`). State outlives program memory. See [`tests.md`](tests.md) for full verification steps.
 
@@ -347,6 +388,7 @@ This project follows [Semantic Versioning 2.0.0](https://semver.org/). Every rel
 | `v1.1.0-alpha.3` | Task 2 Stage 2: Create tasks in SQLite (`POST /tasks`) |
 | `v1.1.0-alpha.4` | Task 2 Stage 3: Full CRUD lifecycle in SQL (`PUT` & `DELETE`) |
 | `v1.1.0-alpha.5` | Task 2 Stage 4: Direct SQL exploration & inspection screenshots |
+| `v1.1.0-alpha.6` | Task 2 Stage 5: Clean clone verification & database documentation |
 
 ```sh
 git tag -l                 # list versions

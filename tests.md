@@ -22,7 +22,7 @@ Comprehensive testing guide and verification checkpoints for **Task 1** (*In-Mem
   - [Stage 2: Create in SQLite (Complete)](#t2---stage-2-create-in-sqlite-complete)
   - [Stage 3: Update & Delete via SQL (Complete)](#t2---stage-3-update--delete-via-sql-complete)
   - [Stage 4: Direct SQL Exploration by Hand (Complete)](#t2---stage-4-direct-sql-exploration-by-hand-complete)
-  - [Stage 5: Clean Clone & Documentation (Upcoming)](#t2---stage-5-clean-clone--documentation-upcoming)
+  - [Stage 5: Clean Clone & Documentation (Complete)](#t2---stage-5-clean-clone--documentation-complete)
   - [Stage 6: AI Rematch Migration Diff (Upcoming)](#t2---stage-6-ai-rematch-migration-diff-upcoming)
 - [One-Click Automated Test Runner](#one-click-automated-test-runner)
 
@@ -546,11 +546,36 @@ DELETE FROM tasks WHERE id = 3;
 
 ---
 
-### T2 - Stage 5: Clean Clone & Documentation (Upcoming)
-Verify that README contains:
-- Why SQLite was selected.
-- Single command to boot the app.
-- Screenshot of DB Browser for SQLite showing the `tasks` table.
+### T2 - Stage 5: Clean Clone & Documentation (Complete)
+
+Validate the **"Clean Clone / Stranger Test"** — proving that a developer who clones the repository from scratch can run the single documented start command without manual configuration:
+
+#### Test 5.1: Clean Clone Database Auto-Creation Checkpoint
+1. **Stop any active server instance** (`Ctrl + C`).
+2. **Remove the database file** to simulate a fresh clone:
+   ```bash
+   rm -f database/tasks.db
+   ```
+3. **Execute the single documented start command**:
+   ```bash
+   fastapi dev
+   # OR: uv run fastapi dev
+   ```
+4. **Verify startup logs**:
+   ```text
+   Starting application: Initializing database...
+   ✅ Database initialized and seeded with 2 tasks.
+   INFO:     Application startup complete.
+   ```
+5. **Probe the API endpoint via cURL**:
+   ```bash
+   curl -i http://localhost:8000/tasks
+   ```
+- **Assertion:** 
+  - Status code `200 OK`.
+  - Body contains the seeded default tasks with IDs 1 and 2.
+  - `database/tasks.db` was created automatically on disk.
+  - Repeating server restarts does not duplicate seed rows (`SELECT COUNT(*) FROM tasks` stays consistent).
 
 ---
 
