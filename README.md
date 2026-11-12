@@ -269,8 +269,8 @@ The project was delivered incrementally across 7 structured stages:
 | **1** | **Connect via .env & Create Table**: `.env` configuration, `psycopg` driver, table creation & seeding | ✅ Complete |
 | **2** | **Read from Postgres**: `GET /tasks` & `GET /tasks/{id}` with parameterized queries (`%s`) | ✅ Complete |
 | **3** | **Full CRUD on Postgres**: `POST`, `PUT`, `DELETE` with `RETURNING *` and status codes | ✅ Complete |
-| **4** | **Docker Compose Stack**: `compose.yaml` linking API and Postgres services | ⏳ Next |
-| **5** | **One-Command Stack & Docs**: Verified single-command boot, `.env.example`, documentation | ⏳ Upcoming |
+| **4** | **Docker Compose Stack**: `compose.yaml` linking API and Postgres services | ✅ Complete |
+| **5** | **One-Command Stack & Docs**: Verified single-command boot, `.env.example`, documentation | ⏳ Next |
 | **6** | **AI Rematch**: Quarantined containerized migration diff and code review | ⏳ Upcoming |
 
 > Full database persistence achieved! All 4 CRUD operations (`POST`, `GET`, `PUT`, `DELETE`) execute against SQLite (`database/tasks.db`), now transitioning to containerized PostgreSQL in Docker. See [`tests.md`](tests.md) for full verification steps.
@@ -571,6 +571,7 @@ This project follows [Semantic Versioning 2.0.0](https://semver.org/). Every rel
 | `v1.3.0-alpha.2` | Task 3 Stage 1: Connect via .env and create table |
 | `v1.3.0-alpha.3` | Task 3 Stage 2: Read from Postgres |
 | `v1.3.0-alpha.4` | Task 3 Stage 3: Full CRUD on Postgres |
+| `v1.3.0-alpha.5` | Task 3 Stage 4: Docker Compose the whole stack |
 
 ```sh
 git tag -l                 # list versions

@@ -29,7 +29,7 @@ Comprehensive testing guide and verification checkpoints for **Task 1** (*In-Mem
   - [Stage 1: Connect via .env & Create Table (Complete)](#t3---stage-1-connect-via-env--create-table-complete)
   - [Stage 2: Read from Postgres (Complete)](#t3---stage-2-read-from-postgres-complete)
   - [Stage 3: Full CRUD on Postgres (Complete)](#t3---stage-3-full-crud-on-postgres-complete)
-  - [Stage 4: Docker Compose the Whole Stack (Upcoming)](#t3---stage-4-docker-compose-the-whole-stack-upcoming)
+  - [Stage 4: Docker Compose the Whole Stack (Complete)](#t3---stage-4-docker-compose-the-whole-stack-complete)
   - [Stage 5: One-Command Stack & Docs (Upcoming)](#t3---stage-5-one-command-stack--docs-upcoming)
   - [Stage 6: AI Rematch (Upcoming)](#t3---stage-6-ai-rematch-upcoming)
 - [One-Click Automated Test Runner](#one-click-automated-test-runner)
@@ -786,6 +786,46 @@ curl -i http://localhost:8000/tasks/4
 ```
 - **Expected Status:** `HTTP/1.1 404 Not Found`
 - **Expected Response:** `{"error": "Task not found"}`
+
+---
+
+### T3 - Stage 4: Docker Compose the Whole Stack (Complete)
+
+Verify that the entire application stack boots in one command via Docker Compose and that data persists across full-stack container restarts:
+
+#### Test 4.1: Single-Command Stack Build & Liveness
+```bash
+docker compose up -d --build
+```
+- **Assertion:** Both `api` and `db` services build, pass health checks, and show status `Up`.
+
+#### Test 4.2: End-to-End API Query
+```bash
+curl -i http://localhost:8000/tasks
+```
+- **Expected Status:** `HTTP/1.1 200 OK`
+- **Assertion:** Returns seeded tasks directly through the containerized network bridge.
+
+#### Test 4.3: Persistent Volume Verification Across Full Stack Teardown
+1. Create a persistent verification task:
+   ```bash
+   curl -i -X POST http://localhost:8000/tasks \
+     -H "Content-Type: application/json" \
+     -d '{"title": "Docker Compose Stack Works"}'
+   ```
+2. Tear down the stack completely:
+   ```bash
+   docker compose down
+   ```
+3. Restart the stack:
+   ```bash
+   docker compose up -d
+   ```
+4. Query all tasks:
+   ```bash
+   curl -s http://localhost:8000/tasks
+   ```
+- **Assertion:** The newly created task (`"Docker Compose Stack Works"`) remains present, proving volume durability across full-stack rebuilds and restarts.
 
 ---
 
