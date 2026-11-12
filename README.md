@@ -19,6 +19,7 @@ A lightweight, high-throughput asynchronous RESTful API engineered with **FastAP
 - [Implementation Roadmap](#implementation-roadmap)
 - [API Endpoints and Verification](#api-endpoints-and-verification)
 - [Interactive Documentation](#interactive-documentation)
+- [Direct SQL Database Inspection](#direct-sql-database-inspection)
 - [AI Rematch Analysis](#ai-rematch-analysis)
 - [Deployment](#deployment)
 - [Versioning and Releases](#versioning-and-releases)
@@ -164,7 +165,7 @@ The project was delivered incrementally across 7 structured stages:
 | **1** | **Read from SQLite**: `GET /tasks` & `GET /tasks/{id}` read live from `database/tasks.db` | ✅ Complete |
 | **2** | **Create in SQLite**: `POST /tasks` inserts rows into `tasks.db` with zero-trust validation & 201 Created | ✅ Complete |
 | **3** | **Update & Delete in SQL**: `PUT` & `DELETE` execute parameterized SQL on `tasks.db` with 200/204/404 | ✅ Complete |
-| **4** | Direct SQL Exploration & DB Browser Audit | ⏳ Upcoming |
+| **4** | **Direct SQL Exploration**: 5 core SQL queries executed directly in SQLite CLI with screenshots | ✅ Complete |
 | **5** | Clean Clone Verification & Database Documentation | ⏳ Upcoming |
 | **6** | AI Rematch Migration Benchmark & Diff | ⏳ Upcoming |
 
@@ -237,6 +238,32 @@ FastAPI automatically parses route decorators and Pydantic models into interacti
 
 ### Verified Swagger UI Interface
 ![Swagger UI Interface](Docs/Swagger.png)
+
+---
+
+## Direct SQL Database Inspection
+
+In Stage 4, SQL queries were executed directly against `database/tasks.db` via the interactive `sqlite3` CLI in table mode (`.mode table`). This confirms that the SQLite database serves as the shared single source of truth for the application.
+
+### 1. Retrieve All Tasks (`SELECT * FROM tasks;`)
+Lists all tasks stored in the database.
+![SELECT All Tasks](Docs/sql_select_all.png)
+
+### 2. Filter Completed Tasks (`SELECT * FROM tasks WHERE done = 1;`)
+Filters and returns only the completed tasks (`done = 1`).
+![SELECT Completed Tasks](Docs/sql_select_completed.png)
+
+### 3. Aggregate Task Count (`SELECT COUNT(*) FROM tasks;`)
+Computes the exact number of rows in the table.
+![SELECT COUNT](Docs/sql_select_count.png)
+
+### 4. Direct Update by Hand (`UPDATE tasks SET done = 1 WHERE id = 2;`)
+Marks Task 2 as completed directly in the database file and verifies with a `SELECT`.
+![UPDATE Task](Docs/sql_update.png)
+
+### 5. Direct Deletion by Hand (`DELETE FROM tasks WHERE id = 3;`)
+Deletes Task 3 directly from the database and confirms deletion by listing the remaining tasks.
+![DELETE Task](Docs/sql_delete.png)
 
 ---
 
@@ -319,6 +346,7 @@ This project follows [Semantic Versioning 2.0.0](https://semver.org/). Every rel
 | `v1.1.0-alpha.2` | Task 2 Stage 1: Database read endpoints |
 | `v1.1.0-alpha.3` | Task 2 Stage 2: Create tasks in SQLite (`POST /tasks`) |
 | `v1.1.0-alpha.4` | Task 2 Stage 3: Full CRUD lifecycle in SQL (`PUT` & `DELETE`) |
+| `v1.1.0-alpha.5` | Task 2 Stage 4: Direct SQL exploration & inspection screenshots |
 
 ```sh
 git tag -l                 # list versions

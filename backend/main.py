@@ -83,7 +83,7 @@ async def lifespan(app: FastAPI):
 # Initialize core FastAPI ASGI (Asynchronous Server Gateway Interface) application instance with database lifespan
 app = FastAPI(
     title="Task CRUD API (SQLite)",
-    version="1.1.0-alpha.4",
+    version="1.1.0-alpha.5",
     description="Asynchronous RESTful CRUD service for task management using SQLite database storage.",
     lifespan=lifespan #lifespan function
 )

@@ -21,7 +21,7 @@ Comprehensive testing guide and verification checkpoints for **Task 1** (*In-Mem
   - [Stage 1: Read from SQLite (Complete)](#t2---stage-1-read-from-sqlite-complete)
   - [Stage 2: Create in SQLite (Complete)](#t2---stage-2-create-in-sqlite-complete)
   - [Stage 3: Update & Delete via SQL (Complete)](#t2---stage-3-update--delete-via-sql-complete)
-  - [Stage 4: Parameterized Safety & SQL Injection (Upcoming)](#t2---stage-4-parameterized-safety--sql-injection-upcoming)
+  - [Stage 4: Direct SQL Exploration by Hand (Complete)](#t2---stage-4-direct-sql-exploration-by-hand-complete)
   - [Stage 5: Clean Clone & Documentation (Upcoming)](#t2---stage-5-clean-clone--documentation-upcoming)
   - [Stage 6: AI Rematch Migration Diff (Upcoming)](#t2---stage-6-ai-rematch-migration-diff-upcoming)
 - [One-Click Automated Test Runner](#one-click-automated-test-runner)
@@ -502,26 +502,47 @@ Execute the complete sequence to verify state holding:
 
 ---
 
-### T2 - Stage 4: Parameterized Safety & SQL Injection (Upcoming)
+### T2 - Stage 4: Direct SQL Exploration by Hand (Complete)
 
-Proves that raw strings cannot compromise the database:
+Directly execute queries against `database/tasks.db` using the `sqlite3` CLI or DB Browser for SQLite:
 
 ```bash
-# Attempt SQL injection in title
-curl -i -X POST http://localhost:8000/tasks \
-  -H "Content-Type: application/json" \
-  -d '{"title": "Clean Task\"); DROP TABLE tasks; --"}'
+# Launch interactive SQLite shell
+sqlite3 database/tasks.db
 
-# Verify table still exists
-python3 -c "
-import sqlite3
-conn = sqlite3.connect('database/tasks.db')
-cursor = conn.cursor()
-cursor.execute(\"SELECT name FROM sqlite_master WHERE type='table' AND name='tasks'\")
-print('Table survived SQL injection attempt:', cursor.fetchone() is not None)
-"
+# Enable pretty table output:
+.mode table
+.headers on
+
+# 1. Retrieve all tasks
+SELECT * FROM tasks;
+
+# 2. Filter completed tasks
+SELECT * FROM tasks WHERE done = 1;
+
+# 3. Count total tasks
+SELECT COUNT(*) FROM tasks;
+
+# 4. Direct update in database
+UPDATE tasks SET done = 1 WHERE id = 2;
+
+# 5. Direct delete in database
+DELETE FROM tasks WHERE id = 3;
+
+# Exit shell
+.quit
 ```
-- **Assertion:** Table survived SQL injection attempt: `True`.
+
+#### Test 4.1: Instant API Reflection Check (No Server Restart)
+1. Run direct SQL update:
+   ```bash
+   sqlite3 database/tasks.db "UPDATE tasks SET title = 'Verified Direct Update', done = 1 WHERE id = 1;"
+   ```
+2. Immediately curl the running API:
+   ```bash
+   curl -s http://localhost:8000/tasks/1 | jq .
+   ```
+- **Assertion:** API immediately returns `"title": "Verified Direct Update"` without restarting the server, proving that `tasks.db` is the shared single source of truth.
 
 ---
 
