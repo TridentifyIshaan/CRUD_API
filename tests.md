@@ -593,9 +593,9 @@ Validate the **"Clean Clone / Stranger Test"** — proving that a developer who 
 ### T2 - Stage 6: AI vs Me Migration Diff (Complete)
 ```bash
 # Run the quarantined AI version on a separate port (uses ai-version/tasks.db)
-uv run fastapi dev ai-version/main.py --port 8001
+uv run fastapi dev ai-version/task2_main.py --port 8001
 # Diff storage code against the hand-built version
-git diff --no-index backend/main.py ai-version/main.py
+git diff --no-index backend/task2_main.py ai-version/task2_main.py
 ```
 - Re-run the Stage 2 and Stage 3 checkpoints against port 8001, restart it, and confirm seeds are not duplicated and data persists.
 - Task 1 AI version now lives at `ai-version/task1_main.py` (`git diff --no-index backend/task1_main.py ai-version/task1_main.py`).
@@ -929,3 +929,21 @@ echo "============================================="
 '
 ```
 
+---
+
+### T3 - Stage 6: AI vs Me Containerized Stack (Complete)
+```bash
+# Run the quarantined AI stack (API :8001, Postgres :5433, volume ai_taskdata)
+docker compose -f ai-version/compose.yaml --env-file .env up --build -d
+curl -i http://localhost:8001/health      # {"status":"ok","db":"ok"}
+curl -i http://localhost:8001/tasks       # 200 + three seeded tasks
+curl -i http://localhost:8001/tasks/999   # 404 {"error":"Task not found"}
+# Persistence: create a task, then down/up and list again
+docker compose -f ai-version/compose.yaml --env-file .env down
+docker compose -f ai-version/compose.yaml --env-file .env up -d
+# Diff against the hand-built stack
+git diff --no-index backend/main.py ai-version/main.py
+git diff --no-index compose.yaml ai-version/compose.yaml
+```
+- Task 2 AI version now lives at `ai-version/task2_main.py`.
+- Automated SQLite contract tests now target `backend/task2_main.py` (`uv run pytest`).

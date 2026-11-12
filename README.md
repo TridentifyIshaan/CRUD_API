@@ -25,6 +25,7 @@ A lightweight, high-throughput asynchronous RESTful API engineered with **FastAP
 - [Direct SQL Database Inspection](#direct-sql-database-inspection)
 - [AI Rematch Analysis](#ai-rematch-analysis)
 - [AI vs Me (Task 2)](#ai-vs-me-task-2)
+- [AI vs Me (Task 3)](#ai-vs-me-task-3)
 - [Proving the API Didn't Change](#proving-the-api-didnt-change)
 - [Deployment](#deployment)
 - [Versioning and Releases](#versioning-and-releases)
@@ -74,13 +75,20 @@ A lightweight, high-throughput asynchronous RESTful API engineered with **FastAP
 ```text
 CRUD_API/
 ├── backend/
-│   ├── main.py          # Task 2: hand-built SQLite CRUD API (default entrypoint)
+│   ├── main.py          # Task 3: hand-built PostgreSQL CRUD API (default entrypoint)
+│   ├── task2_main.py    # Task 2: hand-built SQLite CRUD API
 │   └── task1_main.py    # Task 1: hand-built in-memory CRUD API
 ├── ai-version/
-│   ├── main.py          # Task 2: quarantined AI SQLite migration, rematch round (uses ai-version/tasks.db)
+│   ├── main.py          # Task 3: quarantined AI Postgres migration (own compose stack, port 8001)
+│   ├── Dockerfile       # Task 3: AI multi-stage image
+│   ├── compose.yaml     # Task 3: AI stack (api :8001, db :5433, volume ai_taskdata)
+│   ├── task2_main.py    # Task 2: quarantined AI SQLite migration, rematch round (uses ai-version/tasks.db)
 │   └── task1_main.py    # Task 1: quarantined AI in-memory implementation
 ├── tests/
 │   └── test_api.py      # Shared contract tests run against Task 1 & Task 2 + SQLite-only tests
+├── compose.yaml         # Task 3: hand-built api + db stack
+├── dockerfile           # Task 3: hand-built API image
+├── .env.example         # Placeholder Postgres credentials (copy to .env)
 ├── database/
 │   └── tasks.db         # SQLite store, auto-created on startup (git-ignored)
 ├── Docs/
@@ -234,9 +242,12 @@ Runs at `http://127.0.0.1:8000` with instant directory watching and auto-reload 
 ### Running Each Task and the AI Versions
 | Version | Command | Storage |
 | :--- | :--- | :--- |
-| Task 2 – hand-built (default) | `uv run fastapi dev` | `database/tasks.db` |
+| Task 3 – hand-built (default) | `docker compose up --build` (API on `:8000`) | Postgres in Docker, volume `taskdata` |
+| Task 3 – hand-built, local app | `uv run fastapi dev` (needs Postgres on `localhost:5432` per `.env`) | Postgres |
+| Task 2 – hand-built | `uv run fastapi dev backend/task2_main.py` | `database/tasks.db` |
 | Task 1 – hand-built | `uv run fastapi dev backend/task1_main.py` | In-memory |
-| Task 2 – AI version | `uv run fastapi dev ai-version/main.py --port 8001` | `ai-version/tasks.db` |
+| Task 3 – AI version | `docker compose -f ai-version/compose.yaml --env-file .env up --build` (API on `:8001`) | Postgres in Docker, volume `ai_taskdata` |
+| Task 2 – AI version | `uv run fastapi dev ai-version/task2_main.py --port 8001` | `ai-version/tasks.db` |
 | Task 1 – AI version | `uv run fastapi dev ai-version/task1_main.py --port 8001` | In-memory |
 
 ### Production Mode
@@ -271,7 +282,7 @@ The project was delivered incrementally across 7 structured stages:
 | **3** | **Update & Delete in SQL**: `PUT` & `DELETE` execute parameterized SQL on `tasks.db` with 200/204/404 | ✅ Complete |
 | **4** | **Direct SQL Exploration**: 5 core SQL queries executed directly in SQLite CLI with screenshots | ✅ Complete |
 | **5** | **Clean Clone Verification & Documentation**: SQLite rationale, one-command boot, auto-provisioning | ✅ Complete |
-| **6** | **AI vs Me**: AI-generated SQLite migration in quarantine (`ai-version/main.py`), run, diffed, reviewed & rematched | ✅ Complete |
+| **6** | **AI vs Me**: AI-generated SQLite migration in quarantine (`ai-version/task2_main.py`), run, diffed, reviewed & rematched | ✅ Complete |
 | **★** | **Extras**: `?done=` filter, `?search=` (LIKE), `?sort=title`, `GET /stats`, `created_at`/`updated_at`, indexes, transactions | ✅ Complete |
 | **★** | **Stretch**: same contract tests pass on Task 1 & Task 2 (`uv run pytest`) | ✅ Complete |
 
@@ -285,7 +296,7 @@ The project was delivered incrementally across 7 structured stages:
 | **3** | **Full CRUD on Postgres**: `POST`, `PUT`, `DELETE` with `RETURNING *` and status codes | ✅ Complete |
 | **4** | **Docker Compose Stack**: `compose.yaml` linking API and Postgres services | ✅ Complete |
 | **5** | **One-Command Stack & Docs**: Verified single-command boot, `.env.example`, documentation | ✅ Complete |
-| **6** | **AI Rematch**: Quarantined containerized migration diff and code review | ⏳ Next |
+| **6** | **AI vs Me**: AI-generated Postgres stack in quarantine (`ai-version/main.py`, own Dockerfile & compose), run, diffed, reviewed & rematched | ✅ Complete |
 
 > Full database persistence achieved! All 4 CRUD operations (`POST`, `GET`, `PUT`, `DELETE`) execute against SQLite (`database/tasks.db`), now transitioning to containerized PostgreSQL in Docker. See [`tests.md`](tests.md) for full verification steps.
 
@@ -435,7 +446,7 @@ Include Swagger docs at /docs.
 
 ## AI vs Me (Task 2)
 
-For Task 2 Stage 6, an AI assistant was asked to perform the same in-memory → SQLite migration. Its output is quarantined in [`ai-version/main.py`](ai-version/main.py) and writes to its own `ai-version/tasks.db`, so the hand-built [`backend/main.py`](backend/main.py) and `database/tasks.db` stay untouched.
+For Task 2 Stage 6, an AI assistant was asked to perform the same in-memory → SQLite migration. Its output is quarantined in [`ai-version/task2_main.py`](ai-version/task2_main.py) and writes to its own `ai-version/tasks.db`, so the hand-built [`backend/main.py`](backend/main.py) and `database/tasks.db` stay untouched.
 
 ### Round 1 Prompt
 ```text
@@ -450,7 +461,7 @@ Once the work is complete, stage and commit the changes with a clear, appropriat
 
 Before finishing, verify the repository state and report the changes made, checks performed, commit hash, tag name, and push status.
 ```
-Round 1 output is preserved at tag `v1.1.0` (`git show v1.1.0:ai-version/main.py`).
+Round 1 output is preserved at tag `v1.1.0` (`git show v1.1.0:ai-version/main.py`). The rematch version now lives at `ai-version/task2_main.py`.
 
 ### Run Results
 | Check | Result |
@@ -461,7 +472,7 @@ Round 1 output is preserved at tag `v1.1.0` (`git show v1.1.0:ai-version/main.py
 | Seeds run once — restart does not duplicate examples | ✅ |
 | Data survives a restart | ✅ |
 
-Compare with: `git diff --no-index backend/main.py ai-version/main.py`
+Compare with: `git diff --no-index backend/task2_main.py ai-version/task2_main.py`
 
 ### Round 1 Findings
 
@@ -507,9 +518,92 @@ In ai-version/main.py, migrate my in-memory FastAPI Task API (Python, uv, stdlib
 
 ---
 
+## AI vs Me (Task 3)
+
+For Task 3 Stage 6, an AI assistant was asked to containerize the same API onto PostgreSQL. Its output is quarantined in [`ai-version/`](ai-version/): [`main.py`](ai-version/main.py), [`Dockerfile`](ai-version/Dockerfile) and [`compose.yaml`](ai-version/compose.yaml). It runs as its own Compose project (`crud-api-ai`) on API port `8001`, Postgres port `5433` and volume `ai_taskdata`, so the hand-built stack (`compose.yaml`, `dockerfile`, `backend/main.py`, volume `taskdata`) is untouched. The Task 2 AI file was renamed to `ai-version/task2_main.py`.
+
+### Round 1 Prompt
+```text
+Review and complete Stage 6: "AI vs Me" in the repository.
+
+- Rename ai-version/main.py to ai-version/task2_main.py.
+- Create a new main.py for Task 3, implementing the requirements for that task.
+- Update the README to accurately document the changes and how to run both tasks.
+- Run relevant tests or checks, and resolve any issues introduced by your changes.
+
+Once the work is complete, stage and commit the changes with a clear, appropriate commit message. Create and push a properly named stable release tag; this is not a pre-release. Push the commit and tag to the configured remote.
+
+Before finishing, verify the repository state and report the changes made, checks performed, commit hash, tag name, and push status.
+```
+
+### How to Run It
+```sh
+cp .env.example .env          # set POSTGRES_USER / POSTGRES_PASSWORD / POSTGRES_DB
+docker compose -f ai-version/compose.yaml --env-file .env up --build
+curl -i http://localhost:8001/tasks
+docker compose -f ai-version/compose.yaml --env-file .env down      # add -v to wipe its volume
+```
+
+### Run Results
+| Check | Result |
+| :--- | :---: |
+| `docker compose up` works first try (db healthcheck gates the API) | ✅ |
+| Table created and three tasks seeded once | ✅ |
+| `201` create, `400` blank title / empty PUT / malformed JSON, `200` update, `204` delete, `404` unknown id | ✅ |
+| Every error body is `{"error": ...}` | ✅ |
+| Data survives `docker compose down` then `up` (volume kept it; seeds not duplicated) | ✅ |
+| Password read from `.env`, nothing hardcoded | ✅ |
+
+Compare with:
+```sh
+git diff --no-index backend/main.py ai-version/main.py
+git diff --no-index compose.yaml ai-version/compose.yaml
+git diff --no-index dockerfile ai-version/Dockerfile
+```
+
+### Findings
+
+#### 1. What did it do better?
+- **Multi-stage, non-root image**: dependencies are built into a venv in a builder stage and only the venv + `main.py` are copied into the runtime image, which runs as an unprivileged `app` user — **310 MB vs 495 MB** for the hand-built image (which copies the whole repo with `COPY . .`).
+- **Health check that pings the database**: `GET /health` runs `SELECT 1` and returns `{"status":"ok","db":"ok"}`, or `503` if Postgres is unreachable, so a load balancer can stop routing traffic to a broken instance.
+- **Fail-fast secrets in compose**: `${POSTGRES_PASSWORD:?set in .env}` makes `docker compose up` stop with a clear message if `.env` is missing, instead of booting with empty credentials.
+- **Pinned tags**: `uv:0.5.11` instead of `uv:latest`, so builds are reproducible.
+- **Repository functions** (`db_list`, `db_get`, `db_create`, `db_update`, `db_delete`) keep every SQL line out of the routes, and `UPDATE ... COALESCE(...) RETURNING` does the partial update in one statement instead of SELECT-then-UPDATE.
+- **Seed race guard**: `LOCK TABLE tasks IN EXCLUSIVE MODE` before counting, so two API replicas starting together cannot both seed.
+
+#### 2. What did it get wrong or quietly ignore?
+- **Changed the `/health` contract**: it now returns an extra `db` key and can return `503`, unlike every earlier version — useful, but not "behaving exactly as before".
+- **Exposed Postgres on the host** (`5433:5432`); the hand-built stack keeps the database reachable only on the Compose network.
+- **Added `restart: unless-stopped`** and a `CHECK (length(trim(title)) > 0)` constraint nobody asked for.
+- **Dropped `pyproject.toml` from the image** and copies only `main.py`, so the image cannot run the Task 1/2 entrypoints the hand-built image ships.
+- Used the `postgresql://` URL scheme while `.env.example` documents `postgres://` (both work with psycopg, but they're inconsistent).
+
+#### 3. What did my prompt forget to specify?
+The prompt only said "implementing the requirements for that task", so the AI decided on its own:
+- The ports, project name and volume name for quarantine (`8001`, `5433`, `ai_taskdata`).
+- Whether `/health` may change shape, and whether Postgres should be published to the host.
+- The Docker base image, build strategy (multi-stage) and whether to run as root.
+- The URL scheme and the Postgres version (`postgres:16`, matching mine only by luck).
+
+### Rematch Prompt
+```text
+In ai-version/, containerize my FastAPI Task API (Python, uv, psycopg 3) onto PostgreSQL 16.
+- ai-version/main.py reads DATABASE_URL from the environment (python-dotenv); no credentials in code.
+- Table tasks (id SERIAL PRIMARY KEY, title TEXT NOT NULL, done BOOLEAN NOT NULL DEFAULT FALSE),
+  created if missing; seed my three tasks only when it is empty, in one transaction.
+- Keep GET /, GET /health ({"status":"ok"} exactly), GET /tasks, GET /tasks/{id}, POST, PUT, DELETE
+  with async def routes, %s placeholders, 201/200/204, 400 (not 422) and 404, errors as {"error": "..."}.
+- ai-version/Dockerfile and ai-version/compose.yaml: services api (port 8001) and db (postgres:16, NOT
+  published to the host), named volume ai_taskdata, credentials from the root .env, depends_on the db healthcheck.
+```
+
+**What changed:** with `/health`'s shape and the unpublished database port pinned down, the remaining differences are the deliberate improvements (multi-stage non-root image, fail-fast `.env`, repository functions) rather than silent contract drift.
+
+---
+
 ## Proving the API Didn't Change
 
-[`tests/test_api.py`](tests/test_api.py) runs the **same contract tests** against Task 1 (in-memory list) and Task 2 (SQLite): health, list, get-by-id, 404s, 400 validation, create → update → delete with `201`/`200`/`204`. Extra tests cover SQLite-only behaviour: seeding once across three restarts, data surviving a restart, the error format, extras, and migrating an old schema.
+[`tests/test_api.py`](tests/test_api.py) runs the **same contract tests** against Task 1 (in-memory list, `backend/task1_main.py`) and Task 2 (SQLite, `backend/task2_main.py`): health, list, get-by-id, 404s, 400 validation, create → update → delete with `201`/`200`/`204`. Extra tests cover SQLite-only behaviour: seeding once across three restarts, data surviving a restart, the error format, extras, and migrating an old schema.
 
 ```sh
 uv run pytest -v
@@ -587,6 +681,7 @@ This project follows [Semantic Versioning 2.0.0](https://semver.org/). Every rel
 | `v1.3.0-alpha.4` | Task 3 Stage 3: Full CRUD on Postgres |
 | `v1.3.0-alpha.5` | Task 3 Stage 4: Docker Compose the whole stack |
 | `v1.3.0-alpha.6` | Task 3 Stage 5: One-command stack & docs |
+| `v1.3.0` | Task 3 complete: Stage 6 AI vs Me — stable containerized Postgres release |
 
 ```sh
 git tag -l                 # list versions

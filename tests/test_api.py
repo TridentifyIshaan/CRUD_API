@@ -26,9 +26,9 @@ def load(relative_path: str, db_path: Path | None = None):
     return module
 
 
-@pytest.fixture(params=["backend/task1_main.py", "backend/main.py"], ids=["task1-memory", "task2-sqlite"])
+@pytest.fixture(params=["backend/task1_main.py", "backend/task2_main.py"], ids=["task1-memory", "task2-sqlite"])
 def client(request, tmp_path):
-    db = tmp_path / "database" / "tasks.db" if request.param == "backend/main.py" else None
+    db = tmp_path / "database" / "tasks.db" if request.param == "backend/task2_main.py" else None
     with TestClient(load(request.param, db).app) as c:
         yield c
 
@@ -99,7 +99,7 @@ def db_path(tmp_path):
 
 
 def start(db_path):
-    return TestClient(load("backend/main.py", db_path).app)
+    return TestClient(load("backend/task2_main.py", db_path).app)
 
 
 def test_db_created_and_seeded_once(db_path):
