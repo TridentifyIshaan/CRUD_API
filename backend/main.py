@@ -93,7 +93,7 @@ async def lifespan(app: FastAPI):
 # Initialize core FastAPI application with database lifespan
 app = FastAPI(
     title="Task CRUD API (PostgreSQL + Docker)",
-    version="1.3.0-alpha.2",
+    version="1.3.0-alpha.3",
     description="Asynchronous RESTful CRUD service for task management using containerized PostgreSQL in Docker.",
     lifespan=lifespan
 )
@@ -101,8 +101,8 @@ app = FastAPI(
 '''
 E. Error format
     Every error is returned as {"error": "<message>"}.
-    1. HTTPException (our own 400/404s) -> {"error": detail}
-    2. RequestValidationError (malformed JSON, wrong types such as "done": "maybe") -> 400 instead of FastAPI's default 422
+    1. HTTPException (400/404s) -> {"error": detail}
+    2. RequestValidationError (malformed JSON) -> 400 instead of default 422
 '''
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
@@ -128,6 +128,7 @@ async def root():
 async def health():
     return {"status": "ok"}
 
+# Task 3 - STAGE 2: Read from Postgres
 # Read all tasks from PostgreSQL database
 @app.get("/tasks")
 async def get_tasks():

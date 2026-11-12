@@ -267,8 +267,8 @@ The project was delivered incrementally across 7 structured stages:
 | :---: | :--- | :---: |
 | **0** | **Postgres in Docker & gitignore**: `taskdb` container on port 5432 with volume `taskdata` | ✅ Complete |
 | **1** | **Connect via .env & Create Table**: `.env` configuration, `psycopg` driver, table creation & seeding | ✅ Complete |
-| **2** | **Read from Postgres**: `GET /tasks` & `GET /tasks/{id}` with parameterized queries (`%s`) | ⏳ Next |
-| **3** | **Full CRUD on Postgres**: `POST`, `PUT`, `DELETE` with `RETURNING *` and status codes | ⏳ Upcoming |
+| **2** | **Read from Postgres**: `GET /tasks` & `GET /tasks/{id}` with parameterized queries (`%s`) | ✅ Complete |
+| **3** | **Full CRUD on Postgres**: `POST`, `PUT`, `DELETE` with `RETURNING *` and status codes | ⏳ Next |
 | **4** | **Docker Compose Stack**: `compose.yaml` linking API and Postgres services | ⏳ Upcoming |
 | **5** | **One-Command Stack & Docs**: Verified single-command boot, `.env.example`, documentation | ⏳ Upcoming |
 | **6** | **AI Rematch**: Quarantined containerized migration diff and code review | ⏳ Upcoming |
@@ -569,6 +569,7 @@ This project follows [Semantic Versioning 2.0.0](https://semver.org/). Every rel
 | `v1.2.0` | Extras, error format, AI rematch, shared test suite |
 | `v1.3.0-alpha.1` | Task 3 Stage 0: Postgres in Docker & gitignore |
 | `v1.3.0-alpha.2` | Task 3 Stage 1: Connect via .env and create table |
+| `v1.3.0-alpha.3` | Task 3 Stage 2: Read from Postgres |
 
 ```sh
 git tag -l                 # list versions

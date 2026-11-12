@@ -27,7 +27,7 @@ Comprehensive testing guide and verification checkpoints for **Task 1** (*In-Mem
 - [Task 3: Containerized PostgreSQL & Docker (T3)](#task-3-containerized-postgresql--docker-t3)
   - [Stage 0: Postgres in Docker & gitignore (Complete)](#t3---stage-0-postgres-in-docker--gitignore-complete)
   - [Stage 1: Connect via .env & Create Table (Complete)](#t3---stage-1-connect-via-env--create-table-complete)
-  - [Stage 2: Read from Postgres (Upcoming)](#t3---stage-2-read-from-postgres-upcoming)
+  - [Stage 2: Read from Postgres (Complete)](#t3---stage-2-read-from-postgres-complete)
   - [Stage 3: Full CRUD on Postgres (Upcoming)](#t3---stage-3-full-crud-on-postgres-upcoming)
   - [Stage 4: Docker Compose the Whole Stack (Upcoming)](#t3---stage-4-docker-compose-the-whole-stack-upcoming)
   - [Stage 5: One-Command Stack & Docs (Upcoming)](#t3---stage-5-one-command-stack--docs-upcoming)
@@ -693,6 +693,46 @@ Restart the server 3 times (`Ctrl + C`, then `fastapi dev`) and re-run:
 docker exec -it taskdb psql -U postgres -d tasks -c "SELECT COUNT(*) FROM tasks;"
 ```
 - **Assertion:** Count remains strictly `3` (seeds never duplicate).
+
+---
+
+### T3 - Stage 2: Read from Postgres (Complete)
+
+Verify that the `GET /tasks` and `GET /tasks/{id}` endpoints read live data from the containerized PostgreSQL database using safe parameterized queries (`%s`):
+
+#### Test 2.1: Fetch All Tasks from Postgres
+```bash
+curl -i http://localhost:8000/tasks
+```
+- **Expected Status:** `HTTP/1.1 200 OK`
+- **Expected Response:** JSON array with 3 seeded tasks:
+  ```json
+  [
+    {"id": 1, "title": "Task 1: Build CRUD API with in-memory storage", "done": true},
+    {"id": 2, "title": "Task 2: Connect CRUD API to SQLite database", "done": true},
+    {"id": 3, "title": "Task 3: Containerise the project stack with Docker", "done": false}
+  ]
+  ```
+
+#### Test 2.2: Fetch Single Task by ID
+```bash
+curl -i http://localhost:8000/tasks/1
+```
+- **Expected Status:** `HTTP/1.1 200 OK`
+- **Expected Response:**
+  ```json
+  {"id": 1, "title": "Task 1: Build CRUD API with in-memory storage", "done": true}
+  ```
+
+#### Test 2.3: Fetch Non-Existent Task (404 Error Check)
+```bash
+curl -i http://localhost:8000/tasks/999
+```
+- **Expected Status:** `HTTP/1.1 404 Not Found`
+- **Expected Response:**
+  ```json
+  {"error": "Task not found"}
+  ```
 
 ---
 
