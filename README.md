@@ -15,6 +15,7 @@ A lightweight, high-throughput asynchronous RESTful API engineered with **FastAP
 - [Architecture and Request Flow](#architecture-and-request-flow)
 - [Repository Structure](#repository-structure)
 - [Database Architecture & SQLite Persistence](#database-architecture--sqlite-persistence)
+- [Containerized Database (Docker & PostgreSQL)](#containerized-database-docker--postgresql)
 - [Quickstart and Setup](#quickstart-and-setup)
 - [Running the Server](#running-the-server)
 - [Implementation Roadmap](#implementation-roadmap)
@@ -146,6 +147,37 @@ SELECT * FROM tasks WHERE done = 1;
 
 ---
 
+## Containerized Database (Docker & PostgreSQL)
+
+In Task 3, the storage engine upgrades from SQLite to **PostgreSQL** running inside an isolated **Docker** container, with data persistence managed via Docker volumes.
+
+### Start PostgreSQL in One Command
+```sh
+docker run --name taskdb \
+  -e POSTGRES_PASSWORD=dev \
+  -e POSTGRES_DB=tasks \
+  -p 5432:5432 \
+  -v taskdata:/var/lib/postgresql/data \
+  -d postgres:16
+```
+
+**Flag breakdown:**
+- `--name taskdb`: Names the running container `taskdb`.
+- `-e POSTGRES_PASSWORD=dev`: Sets the database password to `dev`.
+- `-e POSTGRES_DB=tasks`: Automatically creates a database named `tasks`.
+- `-p 5432:5432`: Maps port 5432 from container to your host machine.
+- `-v taskdata:/var/lib/postgresql/data`: Attaches a persistent volume (`taskdata`) so database records survive container restarts.
+- `-d postgres:16`: Runs the official PostgreSQL 16 image in detached (background) mode.
+
+### Accessing the SQL Prompt
+```sh
+docker exec -it taskdb psql -U postgres -d tasks
+```
+- Run `\dt` to inspect tables.
+- Run `\q` to exit back to terminal.
+
+---
+
 ## Quickstart and Setup
 
 ### Prerequisites
@@ -228,9 +260,20 @@ The project was delivered incrementally across 7 structured stages:
 | **6** | **AI vs Me**: AI-generated SQLite migration in quarantine (`ai-version/main.py`), run, diffed, reviewed & rematched | ✅ Complete |
 | **★** | **Extras**: `?done=` filter, `?search=` (LIKE), `?sort=title`, `GET /stats`, `created_at`/`updated_at`, indexes, transactions | ✅ Complete |
 | **★** | **Stretch**: same contract tests pass on Task 1 & Task 2 (`uv run pytest`) | ✅ Complete |
-| **★** | **Containerise the Project Stack via Docker** | ⏳ Pending |
 
-> Full database persistence achieved! All 4 CRUD operations (`POST`, `GET`, `PUT`, `DELETE`) now execute parameterized SQL queries directly against SQLite (`database/tasks.db`). State outlives program memory. See [`tests.md`](tests.md) for full verification steps.
+### Task 3: Containerized PostgreSQL & Docker
+
+| Stage | Milestone | Status |
+| :---: | :--- | :---: |
+| **0** | **Postgres in Docker & gitignore**: `taskdb` container on port 5432 with volume `taskdata` | ✅ Complete |
+| **1** | **Connect via .env & Create Table**: `.env` configuration, `psycopg` driver, table creation & seeding | ⏳ Next |
+| **2** | **Read from Postgres**: `GET /tasks` & `GET /tasks/{id}` with parameterized queries (`%s`) | ⏳ Upcoming |
+| **3** | **Full CRUD on Postgres**: `POST`, `PUT`, `DELETE` with `RETURNING *` and status codes | ⏳ Upcoming |
+| **4** | **Docker Compose Stack**: `compose.yaml` linking API and Postgres services | ⏳ Upcoming |
+| **5** | **One-Command Stack & Docs**: Verified single-command boot, `.env.example`, documentation | ⏳ Upcoming |
+| **6** | **AI Rematch**: Quarantined containerized migration diff and code review | ⏳ Upcoming |
+
+> Full database persistence achieved! All 4 CRUD operations (`POST`, `GET`, `PUT`, `DELETE`) execute against SQLite (`database/tasks.db`), now transitioning to containerized PostgreSQL in Docker. See [`tests.md`](tests.md) for full verification steps.
 
 ---
 
@@ -524,6 +567,7 @@ This project follows [Semantic Versioning 2.0.0](https://semver.org/). Every rel
 | `v1.1.0-alpha.6` | Task 2 Stage 5: Clean clone verification & database documentation |
 | `v1.1.0` | Task 2 complete: Stage 6 AI vs Me — stable SQLite release |
 | `v1.2.0` | Extras, error format, AI rematch, shared test suite |
+| `v1.3.0-alpha.1` | Task 3 Stage 0: Postgres in Docker & gitignore |
 
 ```sh
 git tag -l                 # list versions

@@ -1,6 +1,6 @@
-# 🧪 Test Execution Manual (T1 & T2)
+# 🧪 Test Execution Manual (T1, T2 & T3)
 
-Comprehensive testing guide and verification checkpoints for **Task 1** (*In-Memory CRUD API*) and **Task 2** (*SQLite Database CRUD API*).
+Comprehensive testing guide and verification checkpoints for **Task 1** (*In-Memory CRUD API*), **Task 2** (*SQLite Database CRUD API*), and **Task 3** (*Containerized PostgreSQL & Docker*).
 
 ---
 
@@ -24,6 +24,14 @@ Comprehensive testing guide and verification checkpoints for **Task 1** (*In-Mem
   - [Stage 4: Direct SQL Exploration by Hand (Complete)](#t2---stage-4-direct-sql-exploration-by-hand-complete)
   - [Stage 5: Clean Clone & Documentation (Complete)](#t2---stage-5-clean-clone--documentation-complete)
   - [Stage 6: AI vs Me Migration Diff (Complete)](#t2---stage-6-ai-vs-me-migration-diff-complete)
+- [Task 3: Containerized PostgreSQL & Docker (T3)](#task-3-containerized-postgresql--docker-t3)
+  - [Stage 0: Postgres in Docker & gitignore (Complete)](#t3---stage-0-postgres-in-docker--gitignore-complete)
+  - [Stage 1: Connect via .env & Create Table (Upcoming)](#t3---stage-1-connect-via-env--create-table-upcoming)
+  - [Stage 2: Read from Postgres (Upcoming)](#t3---stage-2-read-from-postgres-upcoming)
+  - [Stage 3: Full CRUD on Postgres (Upcoming)](#t3---stage-3-full-crud-on-postgres-upcoming)
+  - [Stage 4: Docker Compose the Whole Stack (Upcoming)](#t3---stage-4-docker-compose-the-whole-stack-upcoming)
+  - [Stage 5: One-Command Stack & Docs (Upcoming)](#t3---stage-5-one-command-stack--docs-upcoming)
+  - [Stage 6: AI Rematch (Upcoming)](#t3---stage-6-ai-rematch-upcoming)
 - [One-Click Automated Test Runner](#one-click-automated-test-runner)
 
 ---
@@ -602,6 +610,42 @@ curl -i "http://localhost:8000/tasks?search=CRUD"  # LIKE search
 curl -i "http://localhost:8000/tasks?sort=title"   # ORDER BY title
 curl -i http://localhost:8000/stats                # {"total":3,"done":2,"pending":1} on a fresh db
 ```
+
+---
+
+## Task 3: Containerized PostgreSQL & Docker (T3)
+
+Testing guide and verification checkpoints for the containerized PostgreSQL stack in Docker.
+
+### T3 - Stage 0: Postgres in Docker & gitignore (Complete)
+
+Verify that PostgreSQL 16 is running inside an isolated Docker container with a persistent volume:
+
+#### Test 0.1: Docker CLI Liveness Check
+```bash
+docker --version
+```
+- **Assertion:** Prints `Docker version ...` confirming the Docker CLI is available on `$PATH`.
+
+#### Test 0.2: Container Liveness Check
+```bash
+docker ps
+```
+- **Assertion:** `taskdb` container is listed with `STATUS: Up ...` and port mapping `0.0.0.0:5432->5432/tcp`.
+
+#### Test 0.3: SQL Prompt Interactive Check
+```bash
+docker exec -it taskdb psql -U postgres -d tasks
+```
+- Inside the PostgreSQL interactive shell:
+  - Run `\dt` -> Expect `Did not find any relations.` (clean database initialized).
+  - Run `\q` -> Successfully exits shell back to your terminal.
+
+#### Test 0.4: Secret Protection (.gitignore)
+```bash
+git check-ignore -v .env
+```
+- **Assertion:** Returns `.gitignore:4:.env`, verifying that `.env` is ignored by Git to protect secrets.
 
 ---
 
