@@ -28,7 +28,7 @@ Comprehensive testing guide and verification checkpoints for **Task 1** (*In-Mem
   - [Stage 0: Postgres in Docker & gitignore (Complete)](#t3---stage-0-postgres-in-docker--gitignore-complete)
   - [Stage 1: Connect via .env & Create Table (Complete)](#t3---stage-1-connect-via-env--create-table-complete)
   - [Stage 2: Read from Postgres (Complete)](#t3---stage-2-read-from-postgres-complete)
-  - [Stage 3: Full CRUD on Postgres (Upcoming)](#t3---stage-3-full-crud-on-postgres-upcoming)
+  - [Stage 3: Full CRUD on Postgres (Complete)](#t3---stage-3-full-crud-on-postgres-complete)
   - [Stage 4: Docker Compose the Whole Stack (Upcoming)](#t3---stage-4-docker-compose-the-whole-stack-upcoming)
   - [Stage 5: One-Command Stack & Docs (Upcoming)](#t3---stage-5-one-command-stack--docs-upcoming)
   - [Stage 6: AI Rematch (Upcoming)](#t3---stage-6-ai-rematch-upcoming)
@@ -733,6 +733,59 @@ curl -i http://localhost:8000/tasks/999
   ```json
   {"error": "Task not found"}
   ```
+
+---
+
+### T3 - Stage 3: Full CRUD on Postgres (Complete)
+
+Verify that the full CRUD lifecycle executes directly against PostgreSQL using parameterized queries (`%s`) and the SQL `RETURNING` clause:
+
+#### Test 3.1: Create Task (`POST /tasks`)
+```bash
+curl -i -X POST http://localhost:8000/tasks \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Deploy stack with Docker Compose"}'
+```
+- **Expected Status:** `HTTP/1.1 201 Created`
+- **Expected Response:** Newly created task with assigned ID:
+  ```json
+  {"id": 4, "title": "Deploy stack with Docker Compose", "done": false}
+  ```
+
+#### Test 3.2: Input Validation Check (`POST /tasks` with whitespace)
+```bash
+curl -i -X POST http://localhost:8000/tasks \
+  -H "Content-Type: application/json" \
+  -d '{"title": "   "}'
+```
+- **Expected Status:** `HTTP/1.1 400 Bad Request`
+- **Expected Response:** `{"error": "Title is required and cannot be empty"}`
+
+#### Test 3.3: Update Task (`PUT /tasks/4`)
+```bash
+curl -i -X PUT http://localhost:8000/tasks/4 \
+  -H "Content-Type: application/json" \
+  -d '{"done": true}'
+```
+- **Expected Status:** `HTTP/1.1 200 OK`
+- **Expected Response:**
+  ```json
+  {"id": 4, "title": "Deploy stack with Docker Compose", "done": true}
+  ```
+
+#### Test 3.4: Delete Task (`DELETE /tasks/4`)
+```bash
+curl -i -X DELETE http://localhost:8000/tasks/4
+```
+- **Expected Status:** `HTTP/1.1 204 No Content`
+- **Expected Response:** Empty response body.
+
+#### Test 3.5: Confirm Deletion (`GET /tasks/4`)
+```bash
+curl -i http://localhost:8000/tasks/4
+```
+- **Expected Status:** `HTTP/1.1 404 Not Found`
+- **Expected Response:** `{"error": "Task not found"}`
 
 ---
 
