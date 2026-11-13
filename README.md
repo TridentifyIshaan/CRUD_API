@@ -308,21 +308,32 @@ The project was delivered incrementally across 7 structured stages:
 | Stage | Milestone | Status |
 | :---: | :--- | :---: |
 | **0** | **Setup Supabase & Server**: Supabase project, `.env`, Supabase SDK client & startup log | ✅ Complete |
-| **1** | **Open Auth (Sign Up & Log In)**: `POST /auth/signup` & `POST /auth/login` with JWT issue | ⏳ Upcoming |
-| **2** | **Public & Protected Gates**: `GET /public/info` & unverified `GET /protected/profile` | ⏳ Upcoming |
+| **1** | **Open Auth (Sign Up & Log In)**: `POST /auth/signup` & `POST /auth/login` with JWT issue | ✅ Complete |
+| **2** | **Public & Protected Gates**: `GET /public/info` & unverified `GET /protected/profile` | ⏳ Next |
 | **3** | **The Guard (Token Verification)**: `getUser(jwt)` call & safe user metadata extraction | ⏳ Upcoming |
 | **4** | **Middleware Protection & Logout**: Reusable auth dependency & `POST /auth/logout` | ⏳ Upcoming |
 | **5** | **Swagger UI with Bearer Auth**: `HTTPBearer` padlock on `/docs` | ⏳ Upcoming |
 | **6** | **Publish to GitHub**: Public repo, clean README & verified `.gitignore` | ⏳ Upcoming |
 | **7** | **Bonus AI Rematch**: Quarantined AI auth API review & prompt iteration | ⏳ Upcoming |
 
-> Beginning Task 4! Focuses on securing backend endpoints with Supabase Auth, JSON Web Tokens (JWT), and reusable route dependencies.
+> Beginning Task 4! Focuses on securing backend endpoints with Supabase Auth, JSON Web Tokens (JWT), and reusable route dependencies. Stage 1 delivers functional user registration and token-issuing login endpoints.
 
 ---
 
 ## API Endpoints and Verification
 
-### Endpoints Table
+### Task 4: Authentication Endpoints
+
+| Method | Endpoint | HTTP Status | Description | Auth Header | Request Body |
+| :---: | :--- | :---: | :--- | :---: | :---: |
+| `GET` | `/` | `200 OK` | Service metadata & Supabase connection confirmation | None | None |
+| `POST` | `/auth/signup` | `201 Created` / `400` | Register a new user with Supabase Auth | None | `{"email": "str", "password": "str"}` |
+| `POST` | `/auth/login` | `200 OK` / `400` / `401` | Authenticate user & issue access JWT + refresh token | None | `{"email": "str", "password": "str"}` |
+| `POST` | `/auth/logout` | `204 No Content` / `401` | End current user session *(Stage 4)* | `Bearer <token>` | None |
+| `GET` | `/public/info` | `200 OK` | Public unauthenticated route *(Stage 2)* | None | None |
+| `GET` | `/protected/profile`| `200 OK` / `401` | Retrieve authenticated user profile metadata *(Stage 2–3)*| `Bearer <token>` | None |
+
+### Task 1–3: Tasks CRUD Endpoints (Preserved in `task1_main.py`, `task2_main.py`, `task3_main.py`)
 
 | Method | Endpoint | HTTP Status | Description | Request Body |
 | :---: | :--- | :---: | :--- | :---: |
@@ -704,6 +715,7 @@ This project follows [Semantic Versioning 2.0.0](https://semver.org/). Every rel
 | `v1.3.0` | Task 3 complete: Stage 6 AI vs Me — stable containerized Postgres release |
 | `v1.3.1` | Task 3 AI rematch: regenerated AI stack (`/health` contract restored, Postgres not published) |
 | `v1.4.0-alpha.1` | Task 4 Stage 0: Setup Supabase & server |
+| `v1.4.0-alpha.2` | Task 4 Stage 1: Signup and login routes working |
 
 ```sh
 git tag -l                 # list versions

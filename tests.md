@@ -34,7 +34,7 @@ Comprehensive testing guide and verification checkpoints for **Task 1** (*In-Mem
   - [Stage 6: AI Rematch (Complete)](#t3---stage-6-ai-rematch-complete)
 - [Task 4: Authentication & Protected Routes (Supabase + JWT) (T4)](#task-4-authentication--protected-routes-supabase--jwt-t4)
   - [Stage 0: Setup Supabase & Server (Complete)](#t4---stage-0-setup-supabase--server-complete)
-  - [Stage 1: Open Auth (Sign Up & Log In) (Upcoming)](#t4---stage-1-open-auth-sign-up--log-in-upcoming)
+  - [Stage 1: Open Auth (Sign Up & Log In) (Complete)](#t4---stage-1-open-auth-sign-up--log-in-complete)
   - [Stage 2: Public & Protected Gates (Upcoming)](#t4---stage-2-public--protected-gates-upcoming)
   - [Stage 3: The Guard: Token Verification (Upcoming)](#t4---stage-3-the-guard-token-verification-upcoming)
   - [Stage 4: Middleware Protection & Logout (Upcoming)](#t4---stage-4-middleware-protection--logout-upcoming)
@@ -994,3 +994,59 @@ fastapi dev backend/main.py
   curl -i http://localhost:8000/
   # HTTP/1.1 200 OK -> {"message":"Server running & connected to Supabase"}
   ```
+
+---
+
+### T4 - Stage 1: Open Auth: Sign Up & Log In (Complete)
+
+Testing guide and verification checkpoints for user account registration (`POST /auth/signup`) and authentication session token issuance (`POST /auth/login`).
+
+#### Test 1.1: User Registration Check (`POST /auth/signup` -> 201 Created)
+Register a new test user account via Supabase Auth:
+```bash
+curl -i -X POST http://localhost:8000/auth/signup \
+  -H "Content-Type: application/json" \
+  -d '{"email":"stage1_test@example.com","password":"password123"}'
+```
+- **Assertion:** 
+  - Status code: `HTTP/1.1 201 Created`
+  - Body: JSON object containing Supabase user schema (`id`, `email`, `created_at`, etc.).
+
+#### Test 1.2: Authentication & Token Issuance Check (`POST /auth/login` -> 200 OK)
+Log in with the registered credentials to receive a JSON Web Token (JWT) and refresh token:
+```bash
+curl -i -X POST http://localhost:8000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"stage1_test@example.com","password":"password123"}'
+```
+- **Assertion:** 
+  - Status code: `HTTP/1.1 200 OK`
+  - Body: Contains `"access_token"`, `"refresh_token"`, `"token_type": "bearer"`, and `"user"` object.
+
+#### Test 1.3: Zero-Trust Validation Check (`POST /auth/signup` -> 400 Bad Request)
+Verify that missing, empty, or blank credentials are systematically rejected:
+```bash
+# Missing password field in JSON body
+curl -i -X POST http://localhost:8000/auth/signup \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com"}'
+
+# Blank whitespace password
+curl -i -X POST http://localhost:8000/auth/signup \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","password":"   "}'
+```
+- **Assertion:** 
+  - Status code: `HTTP/1.1 400 Bad Request`
+  - Body: Single error message `{"error": "Email and password are required"}`.
+
+#### Test 1.4: Invalid Credentials Rejection (`POST /auth/login` -> 401 Unauthorized)
+Attempting authentication with incorrect credentials must be rejected by Supabase:
+```bash
+curl -i -X POST http://localhost:8000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"stage1_test@example.com","password":"wrongpassword"}'
+```
+- **Assertion:** 
+  - Status code: `HTTP/1.1 401 Unauthorized`
+  - Body: Single error message `{"error": "Invalid login credentials"}`.
