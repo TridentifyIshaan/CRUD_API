@@ -75,7 +75,8 @@ A lightweight, high-throughput asynchronous RESTful API engineered with **FastAP
 ```text
 CRUD_API/
 ├── backend/
-│   ├── main.py          # Task 3: hand-built PostgreSQL CRUD API (default entrypoint)
+│   ├── main.py          # Task 4: hand-built Supabase Auth API (default entrypoint)
+│   ├── task3_main.py    # Task 3: hand-built PostgreSQL CRUD API
 │   ├── task2_main.py    # Task 2: hand-built SQLite CRUD API
 │   └── task1_main.py    # Task 1: hand-built in-memory CRUD API
 ├── ai-version/
@@ -300,7 +301,22 @@ The project was delivered incrementally across 7 structured stages:
 | **5** | **One-Command Stack & Docs**: Verified single-command boot, `.env.example`, documentation | ✅ Complete |
 | **6** | **AI vs Me**: AI-generated Postgres stack in quarantine (`ai-version/main.py`, own Dockerfile & compose), run, diffed, reviewed & rematched | ✅ Complete |
 
-> Full database persistence achieved! All 4 CRUD operations (`POST`, `GET`, `PUT`, `DELETE`) execute against SQLite (`database/tasks.db`), now transitioning to containerized PostgreSQL in Docker. See [`tests.md`](tests.md) for full verification steps.
+> Full containerized PostgreSQL stack achieved in Task 3! All CRUD operations (`POST`, `GET`, `PUT`, `DELETE`) orchestrated alongside the API via Docker Compose (`compose.yaml`). See [`tests.md`](tests.md) for full verification steps.
+
+### Task 4: Authentication & Protected Routes (Supabase + JWT)
+
+| Stage | Milestone | Status |
+| :---: | :--- | :---: |
+| **0** | **Setup Supabase & Server**: Supabase project, `.env`, Supabase SDK client & startup log | ✅ Complete |
+| **1** | **Open Auth (Sign Up & Log In)**: `POST /auth/signup` & `POST /auth/login` with JWT issue | ⏳ Upcoming |
+| **2** | **Public & Protected Gates**: `GET /public/info` & unverified `GET /protected/profile` | ⏳ Upcoming |
+| **3** | **The Guard (Token Verification)**: `getUser(jwt)` call & safe user metadata extraction | ⏳ Upcoming |
+| **4** | **Middleware Protection & Logout**: Reusable auth dependency & `POST /auth/logout` | ⏳ Upcoming |
+| **5** | **Swagger UI with Bearer Auth**: `HTTPBearer` padlock on `/docs` | ⏳ Upcoming |
+| **6** | **Publish to GitHub**: Public repo, clean README & verified `.gitignore` | ⏳ Upcoming |
+| **7** | **Bonus AI Rematch**: Quarantined AI auth API review & prompt iteration | ⏳ Upcoming |
+
+> Beginning Task 4! Focuses on securing backend endpoints with Supabase Auth, JSON Web Tokens (JWT), and reusable route dependencies.
 
 ---
 
@@ -687,6 +703,7 @@ This project follows [Semantic Versioning 2.0.0](https://semver.org/). Every rel
 | `v1.3.0-alpha.6` | Task 3 Stage 5: One-command stack & docs |
 | `v1.3.0` | Task 3 complete: Stage 6 AI vs Me — stable containerized Postgres release |
 | `v1.3.1` | Task 3 AI rematch: regenerated AI stack (`/health` contract restored, Postgres not published) |
+| `v1.4.0-alpha.1` | Task 4 Stage 0: Setup Supabase & server |
 
 ```sh
 git tag -l                 # list versions

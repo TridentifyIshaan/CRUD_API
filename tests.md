@@ -1,6 +1,6 @@
-# 🧪 Test Execution Manual (T1, T2 & T3)
+# 🧪 Test Execution Manual (T1, T2, T3 & T4)
 
-Comprehensive testing guide and verification checkpoints for **Task 1** (*In-Memory CRUD API*), **Task 2** (*SQLite Database CRUD API*), and **Task 3** (*Containerized PostgreSQL & Docker*).
+Comprehensive testing guide and verification checkpoints for **Task 1** (*In-Memory CRUD API*), **Task 2** (*SQLite Database CRUD API*), **Task 3** (*Containerized PostgreSQL & Docker*), and **Task 4** (*Authentication with Supabase & JWT*).
 
 ---
 
@@ -31,7 +31,15 @@ Comprehensive testing guide and verification checkpoints for **Task 1** (*In-Mem
   - [Stage 3: Full CRUD on Postgres (Complete)](#t3---stage-3-full-crud-on-postgres-complete)
   - [Stage 4: Docker Compose the Whole Stack (Complete)](#t3---stage-4-docker-compose-the-whole-stack-complete)
   - [Stage 5: One-Command Stack & Docs (Complete)](#t3---stage-5-one-command-stack--docs-complete)
-  - [Stage 6: AI Rematch (Upcoming)](#t3---stage-6-ai-rematch-upcoming)
+  - [Stage 6: AI Rematch (Complete)](#t3---stage-6-ai-rematch-complete)
+- [Task 4: Authentication & Protected Routes (Supabase + JWT) (T4)](#task-4-authentication--protected-routes-supabase--jwt-t4)
+  - [Stage 0: Setup Supabase & Server (Complete)](#t4---stage-0-setup-supabase--server-complete)
+  - [Stage 1: Open Auth (Sign Up & Log In) (Upcoming)](#t4---stage-1-open-auth-sign-up--log-in-upcoming)
+  - [Stage 2: Public & Protected Gates (Upcoming)](#t4---stage-2-public--protected-gates-upcoming)
+  - [Stage 3: The Guard: Token Verification (Upcoming)](#t4---stage-3-the-guard-token-verification-upcoming)
+  - [Stage 4: Middleware Protection & Logout (Upcoming)](#t4---stage-4-middleware-protection--logout-upcoming)
+  - [Stage 5: Swagger UI with Bearer Auth (Upcoming)](#t4---stage-5-swagger-ui-with-bearer-auth-upcoming)
+  - [Stage 6: Publish to GitHub (Upcoming)](#t4---stage-6-publish-to-github-upcoming)
 - [One-Click Automated Test Runner](#one-click-automated-test-runner)
 
 ---
@@ -947,3 +955,42 @@ git diff --no-index compose.yaml ai-version/compose.yaml
 ```
 - Task 2 AI version now lives at `ai-version/task2_main.py`.
 - Automated SQLite contract tests now target `backend/task2_main.py` (`uv run pytest`).
+
+---
+
+## Task 4: Authentication & Protected Routes (Supabase + JWT) (T4)
+
+Testing guide, checkpoints, and verification for Supabase Auth, JWT verification, and protected endpoints.
+
+### T4 - Stage 0: Setup Supabase & Server (Complete)
+
+> **Note on Verification**: Stage 0 sets up the Identity Provider credentials, `.env` secrets, and the Supabase Python SDK client. Because endpoints (`/auth/signup`, `/auth/login`, `/protected/profile`) are introduced in Stages 1–4, there are no endpoint contract tests for Stage 0. Verification consists of the dependency import check, secret exclusion from git, and startup connection confirmation.
+
+#### Check 0.1: Secret Protection (.gitignore)
+Verify `.env` containing your Supabase URL and anon key is git-ignored:
+```bash
+git check-ignore -v .env
+```
+- **Assertion:** Returns `.gitignore:4:.env`, verifying that `.env` will never be committed to Git.
+
+#### Check 0.2: Supabase SDK Dependency Check
+```bash
+python3 -c "import supabase, dotenv; print('Supabase SDK ready!')"
+```
+- **Assertion:** Prints `Supabase SDK ready!` with exit code 0.
+
+#### Check 0.3: Server Startup & Lifespan Log
+Start the development server:
+```bash
+fastapi dev backend/main.py
+```
+- **Terminal output assertion:**
+  ```text
+  🚀 Server running and connected to Supabase
+  INFO:     Application startup complete.
+  ```
+- Root health probe verification:
+  ```bash
+  curl -i http://localhost:8000/
+  # HTTP/1.1 200 OK -> {"message":"Server running & connected to Supabase"}
+  ```
