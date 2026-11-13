@@ -310,13 +310,13 @@ The project was delivered incrementally across 7 structured stages:
 | **0** | **Setup Supabase & Server**: Supabase project, `.env`, Supabase SDK client & startup log | ✅ Complete |
 | **1** | **Open Auth (Sign Up & Log In)**: `POST /auth/signup` & `POST /auth/login` with JWT issue | ✅ Complete |
 | **2** | **Public & Protected Gates**: `GET /public/info` & unverified `GET /protected/profile` | ✅ Complete |
-| **3** | **The Guard (Token Verification)**: `getUser(jwt)` call & safe user metadata extraction | ⏳ Next |
-| **4** | **Middleware Protection & Logout**: Reusable auth dependency & `POST /auth/logout` | ⏳ Upcoming |
+| **3** | **The Guard (Token Verification)**: `getUser(jwt)` call & safe user metadata extraction | ✅ Complete |
+| **4** | **Middleware Protection & Logout**: Reusable auth dependency & `POST /auth/logout` | ⏳ Next |
 | **5** | **Swagger UI with Bearer Auth**: `HTTPBearer` padlock on `/docs` | ⏳ Upcoming |
 | **6** | **Publish to GitHub**: Public repo, clean README & verified `.gitignore` | ⏳ Upcoming |
 | **7** | **Bonus AI Rematch**: Quarantined AI auth API review & prompt iteration | ⏳ Upcoming |
 
-> Beginning Task 4! Focuses on securing backend endpoints with Supabase Auth, JSON Web Tokens (JWT), and reusable route dependencies. Stage 2 establishes the public route (`/public/info`) and unverified bearer-token-gated route (`/protected/profile`).
+> Beginning Task 4! Focuses on securing backend endpoints with Supabase Auth, JSON Web Tokens (JWT), and reusable route dependencies. Stage 3 implements cryptographic token verification via Supabase `getUser(jwt)`, safely returning user metadata on authentic tokens while rejecting forged or expired passes with HTTP 401.
 
 ---
 
@@ -714,9 +714,10 @@ This project follows [Semantic Versioning 2.0.0](https://semver.org/). Every rel
 | `v1.3.0-alpha.6` | Task 3 Stage 5: One-command stack & docs |
 | `v1.3.0` | Task 3 complete: Stage 6 AI vs Me — stable containerized Postgres release |
 | `v1.3.1` | Task 3 AI rematch: regenerated AI stack (`/health` contract restored, Postgres not published) |
-| `v1.4.0-alpha.1` | Task 4 Stage 0: Setup Supabase & server |
-| `v1.4.0-alpha.2` | Task 4 Stage 1: Signup and login routes working |
-| `v1.4.0-alpha.3` | Task 4 Stage 2: Public route and unverified protected route |
+| `v1.4.0a1` | Task 4 Stage 0: Setup Supabase & server |
+| `v1.4.0a2` | Task 4 Stage 1: Signup and login routes working |
+| `v1.4.0a3` | Task 4 Stage 2: Public route and unverified protected route |
+| `v1.4.0a4` | Task 4 Stage 3: Profile route token verification |
 
 ```sh
 git tag -l                 # list versions

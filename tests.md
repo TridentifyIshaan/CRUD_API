@@ -36,7 +36,7 @@ Comprehensive testing guide and verification checkpoints for **Task 1** (*In-Mem
   - [Stage 0: Setup Supabase & Server (Complete)](#t4---stage-0-setup-supabase--server-complete)
   - [Stage 1: Open Auth (Sign Up & Log In) (Complete)](#t4---stage-1-open-auth-sign-up--log-in-complete)
   - [Stage 2: Public & Protected Gates (Complete)](#t4---stage-2-public--protected-gates-complete)
-  - [Stage 3: The Guard: Token Verification (Upcoming)](#t4---stage-3-the-guard-token-verification-upcoming)
+  - [Stage 3: The Guard: Token Verification (Complete)](#t4---stage-3-the-guard-token-verification-complete)
   - [Stage 4: Middleware Protection & Logout (Upcoming)](#t4---stage-4-middleware-protection--logout-upcoming)
   - [Stage 5: Swagger UI with Bearer Auth (Upcoming)](#t4---stage-5-swagger-ui-with-bearer-auth-upcoming)
   - [Stage 6: Publish to GitHub (Upcoming)](#t4---stage-6-publish-to-github-upcoming)
@@ -1097,3 +1097,44 @@ curl -i http://localhost:8000/protected/profile \
 - **Assertion:**
   - Status code: `HTTP/1.1 200 OK`
   - Body: Contains `"message": "Token presented successfully (unverified)"` and `"token": "my_test_token"`.
+
+---
+
+### T4 - Stage 3: The Guard: Token Verification (Complete)
+
+Testing guide and verification checkpoints for cryptographic token verification using `supabase.auth.get_user(jwt)` on `GET /protected/profile`.
+
+#### Test 3.1: Valid JWT Token Verification (`GET /protected/profile` -> 200 OK)
+Log in to acquire an authentic signed JWT, then present it to the protected endpoint:
+```bash
+# 1. Acquire token
+TOKEN=$(curl -s -X POST http://localhost:8000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"stage1_test@example.com","password":"password123"}' | grep -o '"access_token":"[^"]*' | cut -d'"' -f4)
+
+# 2. Present token to protected gate
+curl -i http://localhost:8000/protected/profile \
+  -H "Authorization: Bearer $TOKEN"
+```
+- **Assertion:**
+  - Status code: `HTTP/1.1 200 OK`
+  - Body: Safe metadata JSON containing `"id"`, `"email"`, and `"created_at"`.
+
+#### Test 3.2: Cryptographic Tamper Rejection (`GET /protected/profile` -> 401 Unauthorized)
+Presenting a forged token where cryptographic signature bytes are modified (e.g. changing signature characters) must be rejected by Supabase Auth:
+```bash
+# Presenting a tampered signature
+curl -i http://localhost:8000/protected/profile \
+  -H "Authorization: Bearer ${TOKEN%????}xxxx"
+```
+- **Assertion:**
+  - Status code: `HTTP/1.1 401 Unauthorized`
+  - Body: Single error message `{"error": "Invalid or expired token"}`.
+
+#### Test 3.3: Missing Authorization Header (`GET /protected/profile` -> 401 Unauthorized)
+```bash
+curl -i http://localhost:8000/protected/profile
+```
+- **Assertion:**
+  - Status code: `HTTP/1.1 401 Unauthorized`
+  - Body: Single error message `{"error": "Access token required"}`.

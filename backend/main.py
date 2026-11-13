@@ -33,7 +33,7 @@ async def lifespan(app: FastAPI):
 # 4. Core FastAPI App
 app = FastAPI(
     title="Task 4: Auth API (Supabase + FastAPI)",
-    version="1.4.0-alpha.3",
+    version="1.4.0-alpha.4",
     description="Authentication API with Supabase: signup, login, logout, and protected routes.",
     lifespan=lifespan
 )
@@ -122,20 +122,35 @@ async def public_info():
         "message": "Welcome stranger! This info is public."
     }
 
-# 2. Protected Endpoint (Unverified token extraction)
+# Task 4 - STAGE 3: The guard: token verification
 @app.get("/protected/profile")
 async def protected_profile(authorization: str | None = Header(None)):
-    # Check if Authorization header was sent
+    # 1. Extract and check Authorization header (from Stage 2)
     if not authorization:
         raise HTTPException(status_code=401, detail="Access token required")
-    # Verify standard 'Bearer <token>' format
+
     parts = authorization.split()
     if len(parts) != 2 or parts[0].lower() != "bearer" or not parts[1].strip():
         raise HTTPException(status_code=401, detail="Access token required")
+
     token = parts[1].strip()
 
-    # Acknowledge receipt of the token without verifying it yet
-    return {
-        "message": "Token presented successfully (unverified)",
-        "token": token
-    }
+    # 2. Ask Supabase whether the token is authentic and valid
+    try:
+        user_response = supabase.auth.get_user(token)
+        if not user_response or not user_response.user:
+            raise HTTPException(status_code=401, detail="Invalid or expired token")
+
+        user = user_response.user
+
+        # 3. Return safe metadata
+        return {
+            "id": user.id,
+            "email": user.email,
+            "created_at": user.created_at
+        }
+    except HTTPException:
+        raise
+    except Exception:
+        # Token was tampered with, expired, or malformed
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
