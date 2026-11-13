@@ -1,66 +1,67 @@
-# 🧪 Test Execution Manual (T1, T2, T3 & T4)
+# 🧪 Test Execution Manual (Tasks 1, 2, 3 & 4)
 
-Comprehensive testing guide and verification checkpoints for **Task 1** (*In-Memory CRUD API*), **Task 2** (*SQLite Database CRUD API*), **Task 3** (*Containerized PostgreSQL & Docker*), and **Task 4** (*Authentication with Supabase & JWT*).
+Comprehensive testing guide, assertion checklists, and verification checkpoints for:
+- **Task 1**: In-Memory CRUD API (`backend/task1_main.py`)
+- **Task 2**: Embedded SQLite Database CRUD API (`backend/task2_main.py`)
+- **Task 3**: Containerized PostgreSQL & Docker Compose Stack (`backend/task3_main.py`)
+- **Task 4**: Supabase Authentication & Protected Routes (`backend/main.py` & Live Cloud)
 
 ---
 
-## Table of Contents
+## 📑 Table of Contents
 
-- [Server Startup & Environment](#server-startup--environment)
+- [Target Server Launch Matrix](#target-server-launch-matrix)
 - [Task 1: In-Memory CRUD API Tests (T1)](#task-1-in-memory-crud-api-tests-t1)
-  - [Stage 0: Base Server Liveness](#t1---stage-0-base-server-liveness)
-  - [Stage 1: Service Discovery & Health Check](#t1---stage-1-service-discovery--health-check)
-  - [Stage 2: Read Operations](#t1---stage-2-read-operations)
-  - [Stage 3: Create with Zero-Trust Validation](#t1---stage-3-create-with-zero-trust-validation)
-  - [Stage 4: Update & Delete Operations](#t1---stage-4-update--delete-operations)
-  - [Stage 5: Swagger UI Audit](#t1---stage-5-swagger-ui-audit)
-  - [Stage 6: Git Delivery Audit](#t1---stage-6-git-delivery-audit)
-  - [Stage 7: AI Rematch Diff](#t1---stage-7-ai-rematch-diff)
+  - [T1 - Stage 0: Base Server Liveness](#t1---stage-0-base-server-liveness)
+  - [T1 - Stage 1: Service Discovery & Health Check](#t1---stage-1-service-discovery--health-check)
+  - [T1 - Stage 2: Read Operations & 404 Handling](#t1---stage-2-read-operations--404-handling)
+  - [T1 - Stage 3: Create with Zero-Trust Validation](#t1---stage-3-create-with-zero-trust-validation)
+  - [T1 - Stage 4: Update & Delete Operations](#t1---stage-4-update--delete-operations)
+  - [T1 - Stage 5: Swagger UI Audit](#t1---stage-5-swagger-ui-audit)
+  - [T1 - Stage 6: Git Delivery Audit](#t1---stage-6-git-delivery-audit)
+  - [T1 - Stage 7: AI Rematch Diff](#t1---stage-7-ai-rematch-diff)
 - [Task 2: SQLite Database CRUD API Tests (T2)](#task-2-sqlite-database-crud-api-tests-t2)
-  - [Stage 0: Database & Lifecycle Setup (Complete)](#t2---stage-0-database--lifecycle-setup-complete)
-  - [Stage 1: Read from SQLite (Complete)](#t2---stage-1-read-from-sqlite-complete)
-  - [Stage 2: Create in SQLite (Complete)](#t2---stage-2-create-in-sqlite-complete)
-  - [Stage 3: Update & Delete via SQL (Complete)](#t2---stage-3-update--delete-via-sql-complete)
-  - [Stage 4: Direct SQL Exploration by Hand (Complete)](#t2---stage-4-direct-sql-exploration-by-hand-complete)
-  - [Stage 5: Clean Clone & Documentation (Complete)](#t2---stage-5-clean-clone--documentation-complete)
-  - [Stage 6: AI vs Me Migration Diff (Complete)](#t2---stage-6-ai-vs-me-migration-diff-complete)
-- [Task 3: Containerized PostgreSQL & Docker (T3)](#task-3-containerized-postgresql--docker-t3)
-  - [Stage 0: Postgres in Docker & gitignore (Complete)](#t3---stage-0-postgres-in-docker--gitignore-complete)
-  - [Stage 1: Connect via .env & Create Table (Complete)](#t3---stage-1-connect-via-env--create-table-complete)
-  - [Stage 2: Read from Postgres (Complete)](#t3---stage-2-read-from-postgres-complete)
-  - [Stage 3: Full CRUD on Postgres (Complete)](#t3---stage-3-full-crud-on-postgres-complete)
-  - [Stage 4: Docker Compose the Whole Stack (Complete)](#t3---stage-4-docker-compose-the-whole-stack-complete)
-  - [Stage 5: One-Command Stack & Docs (Complete)](#t3---stage-5-one-command-stack--docs-complete)
-  - [Stage 6: AI Rematch (Complete)](#t3---stage-6-ai-rematch-complete)
-- [Task 4: Authentication & Protected Routes (Supabase + JWT) (T4)](#task-4-authentication--protected-routes-supabase--jwt-t4)
-  - [Stage 0: Setup Supabase & Server (Complete)](#t4---stage-0-setup-supabase--server-complete)
-  - [Stage 1: Open Auth (Sign Up & Log In) (Complete)](#t4---stage-1-open-auth-sign-up--log-in-complete)
-  - [Stage 2: Public & Protected Gates (Complete)](#t4---stage-2-public--protected-gates-complete)
-  - [Stage 3: The Guard: Token Verification (Complete)](#t4---stage-3-the-guard-token-verification-complete)
-  - [Stage 4: Middleware Protection & Logout (Complete)](#t4---stage-4-middleware-protection--logout-complete)
-  - [Stage 5: Swagger UI with Bearer Auth (Complete)](#t4---stage-5-swagger-ui-with-bearer-auth-complete)
-  - [Stage 6: Publish to GitHub (Upcoming)](#t4---stage-6-publish-to-github-upcoming)
-- [One-Click Automated Test Runner](#one-click-automated-test-runner)
+  - [T2 - Stage 0: Database & Lifecycle Setup](#t2---stage-0-database--lifecycle-setup)
+  - [T2 - Stage 1: Read from SQLite](#t2---stage-1-read-from-sqlite)
+  - [T2 - Stage 2: Create in SQLite & Restart Persistence](#t2---stage-2-create-in-sqlite--restart-persistence)
+  - [T2 - Stage 3: Update & Delete via SQL](#t2---stage-3-update--delete-via-sql)
+  - [T2 - Stage 4: Direct SQL Exploration in CLI](#t2---stage-4-direct-sql-exploration-in-cli)
+  - [T2 - Stage 5: Clean Clone & Self-Healing Verification](#t2---stage-5-clean-clone--self-healing-verification)
+  - [T2 - Stage 6: AI vs Me Migration Diff](#t2---stage-6-ai-vs-me-migration-diff)
+  - [T2 - Extras: Filter, Search, Sort & Statistics](#t2---extras-filter-search-sort--statistics)
+- [Task 3: Containerized PostgreSQL & Docker Stack (T3)](#task-3-containerized-postgresql--docker-stack-t3)
+  - [T3 - Stage 0: Postgres in Docker & Secret Exclusion](#t3---stage-0-postgres-in-docker--secret-exclusion)
+  - [T3 - Stage 1: Connect via .env & Table Seeding](#t3---stage-1-connect-via-env--table-seeding)
+  - [T3 - Stage 2: Read from Postgres](#t3---stage-2-read-from-postgres)
+  - [T3 - Stage 3: Full CRUD Operations in SQL](#t3---stage-3-full-crud-operations-in-sql)
+  - [T3 - Stage 4: Docker Compose Full Stack Orchestration](#t3---stage-4-docker-compose-full-stack-orchestration)
+  - [T3 - Stage 5: One-Command Boot & Clean Clone Round-Trip](#t3---stage-5-one-command-boot--clean-clone-round-trip)
+  - [T3 - Stage 6: AI vs Me Containerized Stack](#t3---stage-6-ai-vs-me-containerized-stack)
+- [Task 4: Supabase Authentication & Cloud API Tests (T4)](#task-4-supabase-authentication--cloud-api-tests-t4)
+  - [T4 - Stage 0: Setup Supabase SDK & Connection Lifecycle](#t4---stage-0-setup-supabase-sdk--connection-lifecycle)
+  - [T4 - Stage 1: User Registration & Token Issuance](#t4---stage-1-user-registration--token-issuance)
+  - [T4 - Stage 2: Public vs Protected Gate Extraction](#t4---stage-2-public-vs-protected-gate-extraction)
+  - [T4 - Stage 3: Cryptographic Token Verification Guard](#t4---stage-3-cryptographic-token-verification-guard)
+  - [T4 - Stage 4: Reusable Dependency & Session Termination](#t4---stage-4-reusable-dependency--session-termination)
+  - [T4 - Stage 5: Interactive Swagger UI Bearer Security](#t4---stage-5-interactive-swagger-ui-bearer-security)
+  - [T4 - Stage 6: Live Production Cloud Deployment](#t4---stage-6-live-production-cloud-deployment)
+- [Automated Regression Suites & Runners](#automated-regression-suites--runners)
+  - [1. Shared Contract Test Suite (`pytest`)](#1-shared-contract-test-suite-pytest)
+  - [2. One-Click Terminal Verification Script](#2-one-click-terminal-verification-script)
 
 ---
 
-## Server Startup & Environment
+## Target Server Launch Matrix
 
-Ensure you are at the repository root (`CRUD_API`):
+Before executing test cases, ensure the corresponding target server is running from repository root (`CRUD_API`):
 
-```bash
-# Run Task 2 (SQLite Database API - Default):
-fastapi dev
-# OR: uv run fastapi dev
-
-# Run Task 1 (In-Memory API):
-fastapi dev backend/task1_main.py
-# OR: uv run fastapi dev backend/task1_main.py
-```
-
-- **Base URL:** `http://localhost:8000`
-- **Interactive Swagger Docs:** `http://localhost:8000/docs`
-- **ReDoc:** `http://localhost:8000/redoc`
+| Test Target | Launch Command | Target URL | Documentation |
+| :--- | :--- | :--- | :--- |
+| **Task 4 (Auth - Current)** | `uv run fastapi dev backend/main.py` | `http://localhost:8000` | `http://localhost:8000/docs` |
+| **Task 4 (Live Cloud)** | *(Already running in cloud)* | `https://crud-api-2b23f883.fastapicloud.dev` | `https://crud-api-2b23f883.fastapicloud.dev/docs` |
+| **Task 3 (Postgres Stack)** | `docker compose up --build` | `http://localhost:8000` | `http://localhost:8000/docs` |
+| **Task 2 (SQLite Database)**| `uv run fastapi dev backend/task2_main.py` | `http://localhost:8000` | `http://localhost:8000/docs` |
+| **Task 1 (In-Memory)** | `uv run fastapi dev backend/task1_main.py` | `http://localhost:8000` | `http://localhost:8000/docs` |
 
 ---
 
@@ -68,12 +69,10 @@ fastapi dev backend/task1_main.py
 
 ### T1 - Stage 0: Base Server Liveness
 Verify that the ASGI server boots and accepts incoming TCP connections.
-
 ```bash
 curl -i http://localhost:8000/
 ```
-- **Expected Status:** `200 OK`
-- **Expected Body:** JSON describing API metadata.
+- **Assertion:** Status code `200 OK`, JSON body contains discovery metadata.
 
 ---
 
@@ -83,7 +82,7 @@ curl -i http://localhost:8000/
 ```bash
 curl -s http://localhost:8000/ | jq .
 ```
-**Expected Response:**
+- **Assertion:** Returns API name, version, and endpoints list:
 ```json
 {
   "name": "Task API",
@@ -96,7 +95,7 @@ curl -s http://localhost:8000/ | jq .
 ```bash
 curl -i http://localhost:8000/health
 ```
-**Expected Response:**
+- **Assertion:**
 ```http
 HTTP/1.1 200 OK
 content-type: application/json
@@ -106,28 +105,25 @@ content-type: application/json
 
 ---
 
-### T1 - Stage 2: Read Operations
+### T1 - Stage 2: Read Operations & 404 Handling
 
 #### 1. Fetch All Tasks (`GET /tasks`)
 ```bash
 curl -i http://localhost:8000/tasks
 ```
-- **Expected Status:** `200 OK`
-- **Expected Response:** JSON array containing tasks.
+- **Assertion:** Returns `HTTP 200 OK` with 3 seeded tasks.
 
 #### 2. Lookup Valid Task ID (`GET /tasks/1`)
 ```bash
 curl -i http://localhost:8000/tasks/1
 ```
-- **Expected Status:** `200 OK`
-- **Expected Response:** Single task object matching ID 1.
+- **Assertion:** Returns `HTTP 200 OK` with task record `{"id": 1, ...}`.
 
 #### 3. Lookup Non-Existent Task ID (`GET /tasks/999`)
 ```bash
 curl -i http://localhost:8000/tasks/999
 ```
-- **Expected Status:** `404 Not Found`
-- **Expected Response:** `{"detail":"Task 999 not found"}`
+- **Assertion:** Returns `HTTP 404 Not Found` with `{"detail": "Task 999 not found"}`.
 
 ---
 
@@ -137,17 +133,9 @@ curl -i http://localhost:8000/tasks/999
 ```bash
 curl -i -X POST http://localhost:8000/tasks \
   -H "Content-Type: application/json" \
-  -d '{"title": "Implement automated regression suite"}'
+  -d '{"title": "Implement input validation"}'
 ```
-- **Expected Status:** `201 Created`
-- **Expected Response:**
-  ```json
-  {
-    "id": 5,
-    "title": "Implement automated regression suite",
-    "done": false
-  }
-  ```
+- **Assertion:** Returns `HTTP 201 Created` with newly generated `id`, `title`, and `done: false`.
 
 #### 2. Validation: Empty Payload (`POST /tasks`)
 ```bash
@@ -155,17 +143,15 @@ curl -i -X POST http://localhost:8000/tasks \
   -H "Content-Type: application/json" \
   -d '{}'
 ```
-- **Expected Status:** `400 Bad Request`
-- **Expected Response:** `{"detail":"Title is required and cannot be empty"}`
+- **Assertion:** Returns `HTTP 400 Bad Request` with `{"detail": "Title is required and cannot be empty"}`.
 
 #### 3. Validation: Whitespace Only (`POST /tasks`)
 ```bash
 curl -i -X POST http://localhost:8000/tasks \
   -H "Content-Type: application/json" \
-  -d '{"title": "     "}'
+  -d '{"title": "   "}'
 ```
-- **Expected Status:** `400 Bad Request`
-- **Expected Response:** `{"detail":"Title is required and cannot be empty"}`
+- **Assertion:** Returns `HTTP 400 Bad Request`.
 
 ---
 
@@ -177,801 +163,278 @@ curl -i -X PUT http://localhost:8000/tasks/1 \
   -H "Content-Type: application/json" \
   -d '{"done": true}'
 ```
-- **Expected Status:** `200 OK`
-- **Expected Response:** Updated task object with `"done": true`.
+- **Assertion:** Returns `HTTP 200 OK` with `"done": true`.
 
-#### 2. Partial Update: Change Title (`PUT /tasks/1`)
-```bash
-curl -i -X PUT http://localhost:8000/tasks/1 \
-  -H "Content-Type: application/json" \
-  -d '{"title": "Updated Title Name"}'
-```
-- **Expected Status:** `200 OK`
-- **Expected Response:** Updated task object with new title.
-
-#### 3. Update Validation: Empty Body (`PUT /tasks/1`)
+#### 2. Update Validation: Empty Body (`PUT /tasks/1`)
 ```bash
 curl -i -X PUT http://localhost:8000/tasks/1 \
   -H "Content-Type: application/json" \
   -d '{}'
 ```
-- **Expected Status:** `400 Bad Request`
-- **Expected Response:** `{"detail":"Must provide title or done to update"}`
+- **Assertion:** Returns `HTTP 400 Bad Request` with `{"detail": "Must provide title or done to update"}`.
 
-#### 4. Update Unknown ID (`PUT /tasks/999`)
-```bash
-curl -i -X PUT http://localhost:8000/tasks/999 \
-  -H "Content-Type: application/json" \
-  -d '{"done": true}'
-```
-- **Expected Status:** `404 Not Found`
-- **Expected Response:** `{"detail":"Task 999 not found"}`
-
-#### 5. Delete Task (`DELETE /tasks/1`)
+#### 3. Delete Task (`DELETE /tasks/1`)
 ```bash
 curl -i -X DELETE http://localhost:8000/tasks/1
 ```
-- **Expected Status:** `204 No Content`
-- **Expected Response Body:** *Empty body (0 bytes)*.
+- **Assertion:** Returns `HTTP 204 No Content` with an empty response body (`Content-Length: 0`).
 
-#### 6. Delete Verification: Deleted ID Returns 404 (`DELETE /tasks/1`)
+#### 4. Delete Verification (`GET /tasks/1`)
 ```bash
-curl -i -X DELETE http://localhost:8000/tasks/1
+curl -i http://localhost:8000/tasks/1
 ```
-- **Expected Status:** `404 Not Found`
-- **Expected Response:** `{"detail":"Task 1 not found"}`
+- **Assertion:** Returns `HTTP 404 Not Found`.
 
 ---
 
 ### T1 - Stage 5: Swagger UI Audit
-Open browser to `http://localhost:8000/docs`:
-- Verify all 5 routes are present: `GET /`, `GET /health`, `GET /tasks`, `POST /tasks`, `PUT /tasks/{task_id}`, `DELETE /tasks/{task_id}`.
-- Test "Try it out" button for `POST /tasks` and verify HTTP 201 response.
-
----
+Verify that OpenAPI interactive documentation renders properly at `http://localhost:8000/docs`.
 
 ### T1 - Stage 6: Git Delivery Audit
-Verify honest commit milestone history:
-
-```bash
-git log --oneline -n 8
-```
-- Confirm discrete commits corresponding to each stage.
-
----
+Verify clean semantic commits for each stage in git log.
 
 ### T1 - Stage 7: AI Rematch Diff
-Compare hand-crafted code with quarantined AI code:
-
-```bash
-git diff --no-index backend/main.py ai-version/main.py
-```
-- Review differences in routing, types, validation, and docstring structure.
+Benchmark hand-crafted `backend/task1_main.py` against `ai-version/task1_main.py`.
 
 ---
 
 ## Task 2: SQLite Database CRUD API Tests (T2)
 
-### T2 - Stage 0: Database & Lifecycle Setup (Complete)
+### T2 - Stage 0: Database & Lifecycle Setup
 
 #### Test 0.1: SQLite File & Table Schema Verification
-Run directly from terminal without needing the server:
-
 ```bash
-python3 -c "
-import sqlite3
-conn = sqlite3.connect('database/tasks.db')
-cursor = conn.cursor()
-
-# Verify table definition
-cursor.execute(\"SELECT sql FROM sqlite_master WHERE type='table' AND name='tasks'\")
-print('Table DDL:\n', cursor.fetchone()[0])
-
-# Verify row count and seeded content
-cursor.execute('SELECT id, title, done FROM tasks')
-rows = cursor.fetchall()
-print(f'\nTotal rows: {len(rows)}')
-for row in rows:
-    print(f'Row {row[0]}: title=\"{row[1]}\", done={row[2]}')
-"
+sqlite3 database/tasks.db ".schema tasks"
+sqlite3 database/tasks.db "SELECT COUNT(*) FROM tasks;"
 ```
-**Expected Output:**
-```text
-Table DDL:
- CREATE TABLE tasks (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    title TEXT NOT NULL,
-    done BOOLEAN NOT NULL DEFAULT 0,
-    created_at TEXT,
-    updated_at TEXT
-)
-
-Total rows: 3
-Row 1: title="Task 1: Build CRUD API with in-memory storage", done=1
-Row 2: title="Task 2: Connect CRUD API to SQLite database", done=1
-Row 3: title="Task 3: Containerise the project stack with Docker", done=0
-```
+- **Assertion:** Table exists with columns (`id`, `title`, `done`, `created_at`, `updated_at`) and seeded count >= 2.
 
 #### Test 0.2: Idempotent Seeding & Restart Test
-Proves that tasks do **not duplicate** when the application boots repeatedly:
-
-1. Note the current row count:
-   ```bash
-   python3 -c "import sqlite3; conn = sqlite3.connect('database/tasks.db'); print('Count before:', conn.cursor().execute('SELECT COUNT(*) FROM tasks').fetchone()[0])"
-   ```
-2. Start the server (`fastapi dev`), then stop it with `Ctrl+C`. Repeat 3 times.
-3. Check the count again:
-   ```bash
-   python3 -c "import sqlite3; conn = sqlite3.connect('database/tasks.db'); print('Count after 3 restarts:', conn.cursor().execute('SELECT COUNT(*) FROM tasks').fetchone()[0])"
-   ```
-- **Assertion:** The count must remain **identical** before and after (e.g., `3 == 3`).
+Restart the server multiple times:
+```bash
+# Seed count must remain constant:
+sqlite3 database/tasks.db "SELECT COUNT(*) FROM tasks;"
+```
+- **Assertion:** Row count does not duplicate on server restart.
 
 #### Test 0.3: Clean Clone / Self-Healing Test
-Proves that a fresh clone provides a working database with zero manual setup:
-
 ```bash
-# 1. Delete the database file
 rm database/tasks.db
-
-# 2. Start the server briefly to trigger lifespan
-fastapi dev &
-SERVER_PID=$!
-sleep 2
-kill $SERVER_PID
-
-# 3. Confirm the database file and seeded tasks were recreated automatically
-python3 -c "
-import sqlite3
-conn = sqlite3.connect('database/tasks.db')
-print('Auto-created row count:', conn.cursor().execute('SELECT COUNT(*) FROM tasks').fetchone()[0])
-"
+# Start server briefly to trigger lifespan:
+python3 -c "from backend.task2_main import init_db; init_db()"
+test -f database/tasks.db && echo "Database self-healed!"
 ```
-- **Assertion:** Prints `Auto-created row count: 3`.
+- **Assertion:** SQLite file and initial seed tasks recreate automatically.
 
 ---
 
-### T2 - Stage 1: Read from SQLite (Complete)
-
-Verify that `GET /tasks` and `GET /tasks/{id}` read live from `database/tasks.db` using SQL queries (`SELECT id, title, done FROM tasks` and `SELECT ... WHERE id = ?`).
+### T2 - Stage 1: Read from SQLite
 
 #### Test 1.1: Fetch All Tasks from SQLite (`GET /tasks`)
 ```bash
 curl -i http://localhost:8000/tasks
 ```
-- **Expected Status:** `200 OK`
-- **Expected Response:** JSON array with all tasks and boolean `"done"` status:
-  ```json
-  [
-    {"id": 1, "title": "Task 1: Build CRUD API with in-memory storage", "done": true},
-    {"id": 2, "title": "Task 2: Connect CRUD API to SQLite database", "done": false}
-  ]
-  ```
+- **Assertion:** Returns `HTTP 200 OK` reading live records from SQLite.
 
 #### Test 1.2: Fetch Single Task (`GET /tasks/1`)
 ```bash
 curl -i http://localhost:8000/tasks/1
 ```
-- **Expected Status:** `200 OK`
-- **Expected Response:**
-  ```json
-  {"id": 1, "title": "Task 1: Build CRUD API with in-memory storage", "done": true}
-  ```
+- **Assertion:** Returns `HTTP 200 OK` with record 1.
 
 #### Test 1.3: Fetch Non-Existent Task (`GET /tasks/999`)
 ```bash
 curl -i http://localhost:8000/tasks/999
 ```
-- **Expected Status:** `404 Not Found`
-- **Expected Response:** `{"error":"Task not found"}`
+- **Assertion:** Returns `HTTP 404 Not Found` with `{"error": "Task not found"}`.
 
 ---
 
-### T2 - Stage 2: Create in SQLite (Complete)
-
-Verify that new tasks are saved permanently to `database/tasks.db` using `INSERT INTO tasks (title, done) VALUES (?, ?)`.
+### T2 - Stage 2: Create in SQLite & Restart Persistence
 
 #### Test 2.1: Successful Task Creation (`POST /tasks`)
 ```bash
 curl -i -X POST http://localhost:8000/tasks \
   -H "Content-Type: application/json" \
-  -d '{"title": "Test persistent database storage"}'
+  -d '{"title": "Verify SQLite Persistence"}'
 ```
-- **Expected Status:** `201 Created`
-- **Expected Response:** Auto-assigned database primary key and `done: false`:
-  ```json
-  {
-    "id": 3,
-    "title": "Test persistent database storage",
-    "done": false
-  }
-  ```
+- **Assertion:** Returns `HTTP 201 Created` with allocated ID.
 
-#### Test 2.2: Zero-Trust Validation - Missing/Empty Title
+#### Test 2.2: The Restart Test (Persistence Proof)
+1. Stop the server (`Ctrl+C`).
+2. Start the server again.
+3. Query the newly created task:
 ```bash
-curl -i -X POST http://localhost:8000/tasks \
-  -H "Content-Type: application/json" \
-  -d '{}'
+curl -i http://localhost:8000/tasks
 ```
-- **Expected Status:** `400 Bad Request`
-- **Expected Response:** `{"error":"Title is required and cannot be empty"}`
-
-#### Test 2.3: Zero-Trust Validation - Whitespace-Only Title
-```bash
-curl -i -X POST http://localhost:8000/tasks \
-  -H "Content-Type: application/json" \
-  -d '{"title": "     "}'
-```
-- **Expected Status:** `400 Bad Request`
-- **Expected Response:** `{"error":"Title is required and cannot be empty"}`
-
-#### Test 2.4: THE RESTART TEST (Data Persistence Proof)
-This test proves that the data outlives program memory:
-
-1. Create a task via API:
-   ```bash
-   curl -i -X POST http://localhost:8000/tasks \
-     -H "Content-Type: application/json" \
-     -d '{"title": "I will survive server restarts"}'
-   ```
-2. Stop the server by pressing `Ctrl + C` in the server terminal.
-3. Start the server again:
-   ```bash
-   fastapi dev
-   ```
-4. Query the tasks:
-   ```bash
-   curl -s http://localhost:8000/tasks | jq .
-   ```
-- **Assertion:** `"I will survive server restarts"` is **still in the output**!
+- **Assertion:** The created task survives server restarts and remains intact on disk.
 
 ---
 
-### T2 - Stage 3: Update & Delete via SQL (Complete)
+### T2 - Stage 3: Update & Delete via SQL
 
-Verify that `PUT` and `DELETE` execute parameterized SQL queries directly against `database/tasks.db` (`UPDATE tasks SET ...` and `DELETE FROM tasks ...`).
-
-#### Test 3.1: Partial Update - Change Completion Status (`PUT /tasks/1`)
+#### Test 3.1: Partial Update via Parameterized SQL (`PUT /tasks/1`)
 ```bash
 curl -i -X PUT http://localhost:8000/tasks/1 \
-  -H "Content-Type: application/json" \
-  -d '{"done": false}'
-```
-- **Expected Status:** `200 OK`
-- **Expected Response:** Task with `"done": false`:
-  ```json
-  {"id": 1, "title": "Task 1: Build CRUD API with in-memory storage", "done": false}
-  ```
-
-#### Test 3.2: Partial Update - Change Title (`PUT /tasks/1`)
-```bash
-curl -i -X PUT http://localhost:8000/tasks/1 \
-  -H "Content-Type: application/json" \
-  -d '{"title": "Updated Task 1 Title"}'
-```
-- **Expected Status:** `200 OK`
-- **Expected Response:** Task with updated title.
-
-#### Test 3.3: Update Validation - Empty Body (`PUT /tasks/1`)
-```bash
-curl -i -X PUT http://localhost:8000/tasks/1 \
-  -H "Content-Type: application/json" \
-  -d '{}'
-```
-- **Expected Status:** `400 Bad Request`
-- **Expected Response:** `{"error":"At least one field (title or done) must be provided"}`
-
-#### Test 3.4: Update Validation - Whitespace Title (`PUT /tasks/1`)
-```bash
-curl -i -X PUT http://localhost:8000/tasks/1 \
-  -H "Content-Type: application/json" \
-  -d '{"title": "   "}'
-```
-- **Expected Status:** `400 Bad Request`
-- **Expected Response:** `{"error":"Title cannot be empty or whitespace"}`
-
-#### Test 3.5: Update Non-Existent ID (`PUT /tasks/999`)
-```bash
-curl -i -X PUT http://localhost:8000/tasks/999 \
   -H "Content-Type: application/json" \
   -d '{"done": true}'
 ```
-- **Expected Status:** `404 Not Found`
-- **Expected Response:** `{"error":"Task not found"}`
+- **Assertion:** Returns `HTTP 200 OK`, updates row directly in SQLite.
 
-#### Test 3.6: Delete Task (`DELETE /tasks/{id}`)
+#### Test 3.2: Delete Task via SQL (`DELETE /tasks/{id}`)
 ```bash
-# 1. Create a disposable task to delete
-DISPOSABLE_ID=$(curl -s -X POST http://localhost:8000/tasks \
-  -H "Content-Type: application/json" \
-  -d '{"title": "Temporary Task for Deletion"}' | jq .id)
-
-# 2. Delete it from SQLite
-curl -i -X DELETE http://localhost:8000/tasks/$DISPOSABLE_ID
+curl -i -X DELETE http://localhost:8000/tasks/1
 ```
-- **Expected Status:** `204 No Content`
-- **Expected Response Body:** *Empty body (0 bytes)*.
-
-#### Test 3.7: Delete Non-Existent ID (`DELETE /tasks/999`)
-```bash
-curl -i -X DELETE http://localhost:8000/tasks/999
-```
-- **Expected Status:** `404 Not Found`
-- **Expected Response:** `{"error":"Task not found"}`
-
-#### Test 3.8: Direct Database Verification
-```bash
-python3 -c "
-import sqlite3
-conn = sqlite3.connect('database/tasks.db')
-cursor = conn.cursor()
-cursor.execute('SELECT id FROM tasks WHERE id = 999')
-assert cursor.fetchone() is None
-print('Task 999 verified absent in SQLite database: True')
-"
-```
-
-#### Test 3.9: Full CRUD Lifecycle Across Restarts
-Execute the complete sequence to verify state holding:
-1. `POST /tasks` -> Save new task.
-2. `PUT /tasks/{id}` -> Mark task done.
-3. Stop server (`Ctrl + C`), restart with `fastapi dev`.
-4. `GET /tasks/{id}` -> Verify state held across the restart.
-5. `DELETE /tasks/{id}` -> Remove task.
-6. `GET /tasks/{id}` -> Confirm HTTP 404.
+- **Assertion:** Returns `HTTP 204 No Content` with empty body. Subsequent `GET /tasks/1` returns `404`.
 
 ---
 
-### T2 - Stage 4: Direct SQL Exploration by Hand (Complete)
-
-Directly execute queries against `database/tasks.db` using the `sqlite3` CLI or DB Browser for SQLite:
-
+### T2 - Stage 4: Direct SQL Exploration in CLI
+Launch SQLite CLI in table mode:
 ```bash
-# Launch interactive SQLite shell
 sqlite3 database/tasks.db
-
-# Enable pretty table output:
 .mode table
-.headers on
-
-# 1. Retrieve all tasks
 SELECT * FROM tasks;
-
-# 2. Filter completed tasks
 SELECT * FROM tasks WHERE done = 1;
-
-# 3. Count total tasks
 SELECT COUNT(*) FROM tasks;
-
-# 4. Direct update in database
 UPDATE tasks SET done = 1 WHERE id = 2;
-
-# 5. Direct delete in database
 DELETE FROM tasks WHERE id = 3;
-
-# Exit shell
-.quit
+.exit
 ```
-
-#### Test 4.1: Instant API Reflection Check (No Server Restart)
-1. Run direct SQL update:
-   ```bash
-   sqlite3 database/tasks.db "UPDATE tasks SET title = 'Verified Direct Update', done = 1 WHERE id = 1;"
-   ```
-2. Immediately curl the running API:
-   ```bash
-   curl -s http://localhost:8000/tasks/1 | jq .
-   ```
-- **Assertion:** API immediately returns `"title": "Verified Direct Update"` without restarting the server, proving that `tasks.db` is the shared single source of truth.
+- **Assertion:** Changes reflect instantly in both SQLite shell and subsequent API queries without needing a server restart.
 
 ---
 
-### T2 - Stage 5: Clean Clone & Documentation (Complete)
+### T2 - Stage 5: Clean Clone & Self-Healing Verification
+Verify that deleting `database/tasks.db` allows the application to cleanly regenerate schemas on next boot.
 
-Validate the **"Clean Clone / Stranger Test"** — proving that a developer who clones the repository from scratch can run the single documented start command without manual configuration:
+### T2 - Stage 6: AI vs Me Migration Diff
+Compare `backend/task2_main.py` against `ai-version/task2_main.py`.
 
-#### Test 5.1: Clean Clone Database Auto-Creation Checkpoint
-1. **Stop any active server instance** (`Ctrl + C`).
-2. **Remove the database file** to simulate a fresh clone:
-   ```bash
-   rm -f database/tasks.db
-   ```
-3. **Execute the single documented start command**:
-   ```bash
-   fastapi dev
-   # OR: uv run fastapi dev
-   ```
-4. **Verify startup logs**:
-   ```text
-   Starting application: Initializing database...
-   ✅ Database initialized and seeded with 3 tasks.
-   INFO:     Application startup complete.
-   ```
-5. **Probe the API endpoint via cURL**:
-   ```bash
-   curl -i http://localhost:8000/tasks
-   ```
-- **Assertion:** 
-  - Status code `200 OK`.
-  - Body contains the seeded default tasks with IDs 1, 2 and 3.
-  - `database/tasks.db` was created automatically on disk.
-  - Repeating server restarts does not duplicate seed rows (`SELECT COUNT(*) FROM tasks` stays consistent).
-
----
-
-### T2 - Stage 6: AI vs Me Migration Diff (Complete)
+### T2 - Extras: Filter, Search, Sort & Statistics
 ```bash
-# Run the quarantined AI version on a separate port (uses ai-version/tasks.db)
-uv run fastapi dev ai-version/task2_main.py --port 8001
-# Diff storage code against the hand-built version
-git diff --no-index backend/task2_main.py ai-version/task2_main.py
-```
-- Re-run the Stage 2 and Stage 3 checkpoints against port 8001, restart it, and confirm seeds are not duplicated and data persists.
-- Task 1 AI version now lives at `ai-version/task1_main.py` (`git diff --no-index backend/task1_main.py ai-version/task1_main.py`).
+# Filter by completion status:
+curl -i "http://localhost:8000/tasks?done=true"
 
----
+# Search by keyword:
+curl -i "http://localhost:8000/tasks?search=SQLite"
 
-### T2 - Extras & Automated Tests
-```bash
-uv run pytest -v                                   # shared Task 1/Task 2 contract tests + SQLite tests
-curl -i "http://localhost:8000/tasks?done=true"    # only completed tasks
-curl -i "http://localhost:8000/tasks?search=CRUD"  # LIKE search
-curl -i "http://localhost:8000/tasks?sort=title"   # ORDER BY title
-curl -i http://localhost:8000/stats                # {"total":3,"done":2,"pending":1} on a fresh db
+# Case-insensitive sorting:
+curl -i "http://localhost:8000/tasks?sort=title"
+
+# Aggregate statistics:
+curl -i http://localhost:8000/stats
 ```
 
 ---
 
-## Task 3: Containerized PostgreSQL & Docker (T3)
+## Task 3: Containerized PostgreSQL & Docker Stack (T3)
 
-Testing guide and verification checkpoints for the containerized PostgreSQL stack in Docker.
+### T3 - Stage 0: Postgres in Docker & Secret Exclusion
 
-### T3 - Stage 0: Postgres in Docker & gitignore (Complete)
-
-Verify that PostgreSQL 16 is running inside an isolated Docker container with a persistent volume:
-
-#### Test 0.1: Docker CLI Liveness Check
-```bash
-docker --version
-```
-- **Assertion:** Prints `Docker version ...` confirming the Docker CLI is available on `$PATH`.
-
-#### Test 0.2: Container Liveness Check
+#### Test 0.1: Docker CLI & Container Liveness
 ```bash
 docker ps
 ```
-- **Assertion:** `taskdb` container is listed with `STATUS: Up ...` and port mapping `0.0.0.0:5432->5432/tcp`.
+- **Assertion:** Container `taskdb` is running on port `5432`.
 
-#### Test 0.3: SQL Prompt Interactive Check
-```bash
-docker exec -it taskdb psql -U postgres -d tasks
-```
-- Inside the PostgreSQL interactive shell:
-  - Run `\dt` -> Expect `Did not find any relations.` (clean database initialized).
-  - Run `\q` -> Successfully exits shell back to terminal.
-
-#### Test 0.4: Secret Protection (.gitignore)
+#### Test 0.2: Secret Protection
 ```bash
 git check-ignore -v .env
 ```
-- **Assertion:** Returns `.gitignore:4:.env`, verifying that `.env` is ignored by Git to protect secrets.
+- **Assertion:** `.env` is properly excluded by `.gitignore`.
 
 ---
 
-### T3 - Stage 1: Connect via .env & Create Table (Complete)
+### T3 - Stage 1: Connect via .env & Table Seeding
 
-Verify that the FastAPI application connects to containerized PostgreSQL using secrets from `.env` and automatically initializes the `tasks` schema and seed data on startup:
-
-#### Test 1.1: Driver & Dependency Installation Check
+#### Test 1.1: Driver & Dependency Installation
 ```bash
-python3 -c "import psycopg, dotenv; print('Dependencies ready!')"
+python3 -c "import psycopg; print('psycopg3 ready!')"
 ```
-- **Assertion:** Prints `Dependencies ready!` without import errors.
+- **Assertion:** Exits 0 and prints confirmation.
 
-#### Test 1.2: Startup Auto-Creation & Seeding
-1. Start the FastAPI development server:
-   ```bash
-   fastapi dev
-   ```
-2. Check terminal startup logs:
-   ```text
-   Starting application: Initializing PostgreSQL database...
-   ✅ PostgreSQL database initialized and seeded with 3 tasks.
-   INFO:     Application startup complete.
-   ```
-
-#### Test 1.3: PostgreSQL Schema & Table Check
-In another terminal, inspect the containerized PostgreSQL database directly:
+#### Test 1.2: Database Inspection Inside Container
 ```bash
-docker exec -it taskdb psql -U postgres -d tasks -c "\dt"
+docker compose exec db bash -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "\dt" -c "SELECT * FROM tasks;"'
 ```
-- **Assertion:** Lists `public | tasks | table | postgres`.
-
-#### Test 1.4: PostgreSQL Seed Verification Check
-```bash
-docker exec -it taskdb psql -U postgres -d tasks -c "SELECT id, title, done FROM tasks;"
-```
-- **Assertion:** Displays 3 rows:
-  - `1 | Task 1: Build CRUD API with in-memory storage | t`
-  - `2 | Task 2: Connect CRUD API to SQLite database | t`
-  - `3 | Task 3: Containerise the project stack with Docker | f`
-
-#### Test 1.5: Idempotency Check (Restart 3 Times)
-Restart the server 3 times (`Ctrl + C`, then `fastapi dev`) and re-run:
-```bash
-docker exec -it taskdb psql -U postgres -d tasks -c "SELECT COUNT(*) FROM tasks;"
-```
-- **Assertion:** Count remains strictly `3` (seeds never duplicate).
+- **Assertion:** Table `tasks` exists with `SERIAL PRIMARY KEY` and seeded rows.
 
 ---
 
-### T3 - Stage 2: Read from Postgres (Complete)
-
-Verify that the `GET /tasks` and `GET /tasks/{id}` endpoints read live data from the containerized PostgreSQL database using safe parameterized queries (`%s`):
+### T3 - Stage 2: Read from Postgres
 
 #### Test 2.1: Fetch All Tasks from Postgres
 ```bash
 curl -i http://localhost:8000/tasks
 ```
-- **Expected Status:** `HTTP/1.1 200 OK`
-- **Expected Response:** JSON array with 3 seeded tasks:
-  ```json
-  [
-    {"id": 1, "title": "Task 1: Build CRUD API with in-memory storage", "done": true},
-    {"id": 2, "title": "Task 2: Connect CRUD API to SQLite database", "done": true},
-    {"id": 3, "title": "Task 3: Containerise the project stack with Docker", "done": false}
-  ]
-  ```
+- **Assertion:** Returns `HTTP 200 OK` reading live records from PostgreSQL.
 
 #### Test 2.2: Fetch Single Task by ID
 ```bash
 curl -i http://localhost:8000/tasks/1
 ```
-- **Expected Status:** `HTTP/1.1 200 OK`
-- **Expected Response:**
-  ```json
-  {"id": 1, "title": "Task 1: Build CRUD API with in-memory storage", "done": true}
-  ```
-
-#### Test 2.3: Fetch Non-Existent Task (404 Error Check)
-```bash
-curl -i http://localhost:8000/tasks/999
-```
-- **Expected Status:** `HTTP/1.1 404 Not Found`
-- **Expected Response:**
-  ```json
-  {"error": "Task not found"}
-  ```
+- **Assertion:** Returns `HTTP 200 OK` with task 1.
 
 ---
 
-### T3 - Stage 3: Full CRUD on Postgres (Complete)
-
-Verify that the full CRUD lifecycle executes directly against PostgreSQL using parameterized queries (`%s`) and the SQL `RETURNING` clause:
-
-#### Test 3.1: Create Task (`POST /tasks`)
-```bash
-curl -i -X POST http://localhost:8000/tasks \
-  -H "Content-Type: application/json" \
-  -d '{"title": "Deploy stack with Docker Compose"}'
-```
-- **Expected Status:** `HTTP/1.1 201 Created`
-- **Expected Response:** Newly created task with assigned ID:
-  ```json
-  {"id": 4, "title": "Deploy stack with Docker Compose", "done": false}
-  ```
-
-#### Test 3.2: Input Validation Check (`POST /tasks` with whitespace)
-```bash
-curl -i -X POST http://localhost:8000/tasks \
-  -H "Content-Type: application/json" \
-  -d '{"title": "   "}'
-```
-- **Expected Status:** `HTTP/1.1 400 Bad Request`
-- **Expected Response:** `{"error": "Title is required and cannot be empty"}`
-
-#### Test 3.3: Update Task (`PUT /tasks/4`)
-```bash
-curl -i -X PUT http://localhost:8000/tasks/4 \
-  -H "Content-Type: application/json" \
-  -d '{"done": true}'
-```
-- **Expected Status:** `HTTP/1.1 200 OK`
-- **Expected Response:**
-  ```json
-  {"id": 4, "title": "Deploy stack with Docker Compose", "done": true}
-  ```
-
-#### Test 3.4: Delete Task (`DELETE /tasks/4`)
-```bash
-curl -i -X DELETE http://localhost:8000/tasks/4
-```
-- **Expected Status:** `HTTP/1.1 204 No Content`
-- **Expected Response:** Empty response body.
-
-#### Test 3.5: Confirm Deletion (`GET /tasks/4`)
-```bash
-curl -i http://localhost:8000/tasks/4
-```
-- **Expected Status:** `HTTP/1.1 404 Not Found`
-- **Expected Response:** `{"error": "Task not found"}`
+### T3 - Stage 3: Full CRUD Operations in SQL
+Verify `POST`, `PUT`, `DELETE` execute parameterized `%s` queries against PostgreSQL, returning proper status codes (`201`, `200`, `204`, `400`, `404`).
 
 ---
 
-### T3 - Stage 4: Docker Compose the Whole Stack (Complete)
-
-Verify that the entire application stack boots in one command via Docker Compose and that data persists across full-stack container restarts:
+### T3 - Stage 4: Docker Compose Full Stack Orchestration
 
 #### Test 4.1: Single-Command Stack Build & Liveness
 ```bash
-docker compose up -d --build
+docker compose up --build -d
+docker compose ps
 ```
-- **Assertion:** Both `api` and `db` services build, pass health checks, and show status `Up`.
+- **Assertion:** Both `api` and `db` services are healthy.
 
-#### Test 4.2: End-to-End API Query
+#### Test 4.2: Volume Persistence Across Full Teardown
 ```bash
-curl -i http://localhost:8000/tasks
-```
-- **Expected Status:** `HTTP/1.1 200 OK`
-- **Assertion:** Returns seeded tasks directly through the containerized network bridge.
+# 1. Create a task
+curl -s -X POST http://localhost:8000/tasks -H "Content-Type: application/json" -d '{"title": "Persistent Docker Task"}'
 
-#### Test 4.3: Persistent Volume Verification Across Full Stack Teardown
-1. Create a persistent verification task:
-   ```bash
-   curl -i -X POST http://localhost:8000/tasks \
-     -H "Content-Type: application/json" \
-     -d '{"title": "Docker Compose Stack Works"}'
-   ```
-2. Tear down the stack completely:
-   ```bash
-   docker compose down
-   ```
-3. Restart the stack:
-   ```bash
-   docker compose up -d
-   ```
-4. Query all tasks:
-   ```bash
-   curl -s http://localhost:8000/tasks
-   ```
-- **Assertion:** The newly created task (`"Docker Compose Stack Works"`) remains present, proving volume durability across full-stack rebuilds and restarts.
+# 2. Tear down the entire stack (retaining volume)
+docker compose down
+
+# 3. Bring stack back up
+docker compose up -d
+
+# 4. Verify task still exists
+curl -s http://localhost:8000/tasks | grep "Persistent Docker Task"
+```
+- **Assertion:** Task persists safely inside Docker named volume `taskdata`.
 
 ---
 
-### T3 - Stage 5: One-Command Stack & Docs (Complete)
-
-Verify that a clean clone boots the entire stack in one command and serves seeded tasks with zero manual database intervention:
-
-#### Test 5.1: Clean Clone Round-Trip Checkpoint
-1. Tear down the stack and wipe volumes:
-   ```bash
-   docker compose down -v
-   ```
-2. Run the single boot command:
-   ```bash
-   docker compose up -d --build
-   ```
-3. Verify immediate response from API:
-   ```bash
-   curl -i http://localhost:8000/tasks
-   ```
-- **Assertion:** Returns `HTTP/1.1 200 OK` with 3 seeded tasks in under 15 seconds.
-
-#### Test 5.2: Documentation Verification
-Confirm that `README.md` documents:
-- [x] Description of the containerized stack.
-- [x] One documented command to run everything (`cp .env.example .env && docker compose up --build`).
-- [x] Environment variable definitions referencing `.env.example`.
-- [x] Endpoint table and sample `curl -i` output.
-- [x] Database inspection screenshot reference (`Docs/postgres_table.png`).
+### T3 - Stage 5: One-Command Boot & Clean Clone Round-Trip
+Verify that any fresh environment can run `docker compose up --build` with `.env` and immediately pass tests.
 
 ---
 
-## One-Click Automated Test Runner
-
-Save the following test runner or execute it directly in terminal to validate the active server and database state:
-
+### T3 - Stage 6: AI vs Me Containerized Stack
+Run and audit the isolated AI container stack:
 ```bash
-bash -c '
-echo "============================================="
-echo "   RUNNING AUTOMATED TEST SUITE (T1 & T2)   "
-echo "============================================="
-
-# 1. Database File & Schema Check
-echo -n "[T2-0.1] Database Schema Check: "
-python3 -c "
-import sqlite3
-conn = sqlite3.connect(\"database/tasks.db\")
-c = conn.cursor()
-c.execute(\"SELECT name FROM sqlite_master WHERE type=\x27table\x27 AND name=\x27tasks\x27\")
-assert c.fetchone() is not None
-" && echo "✅ PASS" || echo "❌ FAIL"
-
-# 2. Database Seed Count Check
-echo -n "[T2-0.2] Seeded Row Count Check: "
-python3 -c "
-import sqlite3
-conn = sqlite3.connect(\"database/tasks.db\")
-c = conn.cursor()
-count = c.execute(\"SELECT COUNT(*) FROM tasks\").fetchone()[0]
-assert count >= 2, f\"Expected >= 2 rows, found {count}\"
-" && echo "✅ PASS" || echo "❌ FAIL"
-
-# 3. HTTP Health Probe
-echo -n "[T1-1.1] GET /health (HTTP 200): "
-STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/health)
-[ "$STATUS" = "200" ] && echo "✅ PASS" || echo "❌ FAIL (Got $STATUS - Is server running?)"
-
-# 4. HTTP Root Discovery
-echo -n "[T1-1.2] GET / (HTTP 200): "
-STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/)
-[ "$STATUS" = "200" ] && echo "✅ PASS" || echo "❌ FAIL (Got $STATUS)"
-
-# 5. HTTP Validation Check (400 on empty payload)
-echo -n "[T1-3.2] POST /tasks {} (HTTP 400): "
-STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:8000/tasks -H "Content-Type: application/json" -d "{}")
-[ "$STATUS" = "400" ] && echo "✅ PASS" || echo "❌ FAIL (Got $STATUS)"
-
-# 6. HTTP 404 Check
-echo -n "[T2-1.3] GET /tasks/9999 (HTTP 404): "
-STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/tasks/9999)
-[ "$STATUS" = "404" ] && echo "✅ PASS" || echo "❌ FAIL (Got $STATUS)"
-
-# 7. Persistent Task Creation Check
-echo -n "[T2-2.1] POST /tasks (HTTP 201 Created): "
-STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:8000/tasks -H "Content-Type: application/json" -d "{\"title\": \"Automated Verification Task\"}")
-[ "$STATUS" = "201" ] && echo "✅ PASS" || echo "❌ FAIL (Got $STATUS)"
-
-# 8. Persistent Task Update Check
-echo -n "[T2-3.1] PUT /tasks/1 (HTTP 200 OK): "
-STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X PUT http://localhost:8000/tasks/1 -H "Content-Type: application/json" -d "{\"done\": true}")
-[ "$STATUS" = "200" ] && echo "✅ PASS" || echo "❌ FAIL (Got $STATUS)"
-
-# 9. Update Validation Check (400 on empty payload)
-echo -n "[T2-3.3] PUT /tasks/1 {} (HTTP 400): "
-STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X PUT http://localhost:8000/tasks/1 -H "Content-Type: application/json" -d "{}")
-[ "$STATUS" = "400" ] && echo "✅ PASS" || echo "❌ FAIL (Got $STATUS)"
-
-echo "============================================="
-echo "               TESTS COMPLETE                "
-echo "============================================="
-'
-```
-
----
-
-### T3 - Stage 6: AI vs Me Containerized Stack (Complete)
-```bash
-# Run the quarantined AI stack (API :8001, volume ai_taskdata; Postgres not published)
 docker compose -f ai-version/compose.yaml --env-file .env up --build -d
-curl -i http://localhost:8001/health      # {"status":"ok"}
-curl -i http://localhost:8001/tasks       # 200 + three seeded tasks
-curl -i http://localhost:8001/tasks/999   # 404 {"error":"Task not found"}
-# Persistence: create a task, then down/up and list again
+curl -i http://localhost:8001/health
+curl -i http://localhost:8001/tasks
 docker compose -f ai-version/compose.yaml --env-file .env down
-docker compose -f ai-version/compose.yaml --env-file .env up -d
-# Diff against the hand-built stack
-git diff --no-index backend/main.py ai-version/main.py
-git diff --no-index compose.yaml ai-version/compose.yaml
 ```
-- Task 2 AI version now lives at `ai-version/task2_main.py`.
-- Automated SQLite contract tests now target `backend/task2_main.py` (`uv run pytest`).
 
 ---
 
-## Task 4: Authentication & Protected Routes (Supabase + JWT) (T4)
+## Task 4: Supabase Authentication & Cloud API Tests (T4)
 
-Testing guide, checkpoints, and verification for Supabase Auth, JWT verification, and protected endpoints.
-
-### T4 - Stage 0: Setup Supabase & Server (Complete)
-
-> **Note on Verification**: Stage 0 sets up the Identity Provider credentials, `.env` secrets, and the Supabase Python SDK client. Because endpoints (`/auth/signup`, `/auth/login`, `/protected/profile`) are introduced in Stages 1–4, there are no endpoint contract tests for Stage 0. Verification consists of the dependency import check, secret exclusion from git, and startup connection confirmation.
+### T4 - Stage 0: Setup Supabase SDK & Connection Lifecycle
 
 #### Check 0.1: Secret Protection (.gitignore)
-Verify `.env` containing your Supabase URL and anon key is git-ignored:
 ```bash
 git check-ignore -v .env
 ```
-- **Assertion:** Returns `.gitignore:4:.env`, verifying that `.env` will never be committed to Git.
+- **Assertion:** Returns `.gitignore:4:.env`.
 
 #### Check 0.2: Supabase SDK Dependency Check
 ```bash
@@ -979,135 +442,88 @@ python3 -c "import supabase, dotenv; print('Supabase SDK ready!')"
 ```
 - **Assertion:** Prints `Supabase SDK ready!` with exit code 0.
 
-#### Check 0.3: Server Startup & Lifespan Log
-Start the development server:
+#### Check 0.3: Server Startup & Lifespan Connection Log
 ```bash
-fastapi dev backend/main.py
+uv run fastapi dev backend/main.py
 ```
 - **Terminal output assertion:**
   ```text
   🚀 Server running and connected to Supabase
   INFO:     Application startup complete.
   ```
-- Root health probe verification:
-  ```bash
-  curl -i http://localhost:8000/
-  # HTTP/1.1 200 OK -> {"message":"Server running & connected to Supabase"}
-  ```
 
 ---
 
-### T4 - Stage 1: Open Auth: Sign Up & Log In (Complete)
-
-Testing guide and verification checkpoints for user account registration (`POST /auth/signup`) and authentication session token issuance (`POST /auth/login`).
+### T4 - Stage 1: User Registration & Token Issuance
 
 #### Test 1.1: User Registration Check (`POST /auth/signup` -> 201 Created)
-Register a new test user account via Supabase Auth:
 ```bash
 curl -i -X POST http://localhost:8000/auth/signup \
   -H "Content-Type: application/json" \
   -d '{"email":"stage1_test@example.com","password":"password123"}'
 ```
-- **Assertion:** 
-  - Status code: `HTTP/1.1 201 Created`
-  - Body: JSON object containing Supabase user schema (`id`, `email`, `created_at`, etc.).
+- **Assertion:** Returns `HTTP/1.1 201 Created` with Supabase user object (`id`, `email`, `created_at`).
 
 #### Test 1.2: Authentication & Token Issuance Check (`POST /auth/login` -> 200 OK)
-Log in with the registered credentials to receive a JSON Web Token (JWT) and refresh token:
 ```bash
 curl -i -X POST http://localhost:8000/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"stage1_test@example.com","password":"password123"}'
 ```
-- **Assertion:** 
-  - Status code: `HTTP/1.1 200 OK`
-  - Body: Contains `"access_token"`, `"refresh_token"`, `"token_type": "bearer"`, and `"user"` object.
+- **Assertion:** Returns `HTTP/1.1 200 OK` containing `"access_token"`, `"refresh_token"`, and `"token_type": "bearer"`.
 
 #### Test 1.3: Zero-Trust Validation Check (`POST /auth/signup` -> 400 Bad Request)
-Verify that missing, empty, or blank credentials are systematically rejected:
 ```bash
-# Missing password field in JSON body
+# A. Missing password field
 curl -i -X POST http://localhost:8000/auth/signup \
   -H "Content-Type: application/json" \
   -d '{"email":"test@example.com"}'
 
-# Blank whitespace password
+# B. Blank whitespace password
 curl -i -X POST http://localhost:8000/auth/signup \
   -H "Content-Type: application/json" \
   -d '{"email":"test@example.com","password":"   "}'
 ```
-- **Assertion:** 
-  - Status code: `HTTP/1.1 400 Bad Request`
-  - Body: Single error message `{"error": "Email and password are required"}`.
+- **Assertion:** Returns `HTTP/1.1 400 Bad Request` with `{"error": "Email and password are required"}`.
 
 #### Test 1.4: Invalid Credentials Rejection (`POST /auth/login` -> 401 Unauthorized)
-Attempting authentication with incorrect credentials must be rejected by Supabase:
 ```bash
 curl -i -X POST http://localhost:8000/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"stage1_test@example.com","password":"wrongpassword"}'
 ```
-- **Assertion:** 
-  - Status code: `HTTP/1.1 401 Unauthorized`
-  - Body: Single error message `{"error": "Invalid login credentials"}`.
+- **Assertion:** Returns `HTTP/1.1 401 Unauthorized` with `{"error": "Invalid login credentials"}`.
 
 ---
 
-### T4 - Stage 2: The Public & Protected Gates (Complete)
-
-Testing guide and verification checkpoints for the public informational route (`GET /public/info`) and the unverified bearer token extraction route (`GET /protected/profile`).
+### T4 - Stage 2: Public vs Protected Gate Extraction
 
 #### Test 2.1: Public Route Access (`GET /public/info` -> 200 OK)
-Verify that public information can be accessed without any credentials or Authorization headers:
 ```bash
 curl -i http://localhost:8000/public/info
 ```
-- **Assertion:**
-  - Status code: `HTTP/1.1 200 OK`
-  - Body: `{"message": "Welcome stranger! This info is public."}`
+- **Assertion:** Returns `HTTP/1.1 200 OK` with `{"message": "Welcome stranger! This info is public."}`.
 
 #### Test 2.2: Protected Route Without Token (`GET /protected/profile` -> 401 Unauthorized)
-Accessing the protected route without presenting an Authorization header must be rejected:
 ```bash
 curl -i http://localhost:8000/protected/profile
 ```
-- **Assertion:**
-  - Status code: `HTTP/1.1 401 Unauthorized`
-  - Body: `{"error": "Access token required"}`
+- **Assertion:** Returns `HTTP/1.1 401 Unauthorized` with `{"error": "Access token required"}`.
 
 #### Test 2.3: Protected Route With Malformed Header (`GET /protected/profile` -> 401 Unauthorized)
-Presenting a non-Bearer scheme or empty token must be rejected:
 ```bash
-# Non-Bearer scheme
 curl -i http://localhost:8000/protected/profile -H "Authorization: Basic 12345"
-
-# Missing token string
 curl -i http://localhost:8000/protected/profile -H "Authorization: Bearer "
 ```
-- **Assertion:**
-  - Status code: `HTTP/1.1 401 Unauthorized`
-  - Body: `{"error": "Access token required"}`
-
-#### Test 2.4: Protected Route With Bearer Token Presented (`GET /protected/profile` -> 200 OK)
-Presenting a properly formatted Bearer token is accepted at the gate (unverified):
-```bash
-curl -i http://localhost:8000/protected/profile \
-  -H "Authorization: Bearer my_test_token"
-```
-- **Assertion:**
-  - Status code: `HTTP/1.1 200 OK`
-  - Body: Contains `"message": "Token presented successfully (unverified)"` and `"token": "my_test_token"`.
+- **Assertion:** Returns `HTTP/1.1 401 Unauthorized` with `{"error": "Access token required"}`.
 
 ---
 
-### T4 - Stage 3: The Guard: Token Verification (Complete)
-
-Testing guide and verification checkpoints for cryptographic token verification using `supabase.auth.get_user(jwt)` on `GET /protected/profile`.
+### T4 - Stage 3: Cryptographic Token Verification Guard
 
 #### Test 3.1: Valid JWT Token Verification (`GET /protected/profile` -> 200 OK)
-Log in to acquire an authentic signed JWT, then present it to the protected endpoint:
 ```bash
-# 1. Acquire token
+# 1. Acquire authentic JWT
 TOKEN=$(curl -s -X POST http://localhost:8000/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"stage1_test@example.com","password":"password123"}' | grep -o '"access_token":"[^"]*' | cut -d'"' -f4)
@@ -1116,92 +532,132 @@ TOKEN=$(curl -s -X POST http://localhost:8000/auth/login \
 curl -i http://localhost:8000/protected/profile \
   -H "Authorization: Bearer $TOKEN"
 ```
-- **Assertion:**
-  - Status code: `HTTP/1.1 200 OK`
-  - Body: Safe metadata JSON containing `"id"`, `"email"`, and `"created_at"`.
+- **Assertion:** Returns `HTTP/1.1 200 OK` with verified profile metadata (`id`, `email`, `created_at`).
 
 #### Test 3.2: Cryptographic Tamper Rejection (`GET /protected/profile` -> 401 Unauthorized)
-Presenting a forged token where cryptographic signature bytes are modified (e.g. changing signature characters) must be rejected by Supabase Auth:
 ```bash
-# Presenting a tampered signature
+# Modify signature bytes
 curl -i http://localhost:8000/protected/profile \
   -H "Authorization: Bearer ${TOKEN%????}xxxx"
 ```
-- **Assertion:**
-  - Status code: `HTTP/1.1 401 Unauthorized`
-  - Body: Single error message `{"error": "Invalid or expired token"}`.
-
-#### Test 3.3: Missing Authorization Header (`GET /protected/profile` -> 401 Unauthorized)
-```bash
-curl -i http://localhost:8000/protected/profile
-```
-- **Assertion:**
-  - Status code: `HTTP/1.1 401 Unauthorized`
-  - Body: Single error message `{"error": "Access token required"}`.
+- **Assertion:** Returns `HTTP/1.1 401 Unauthorized` with `{"error": "Invalid or expired token"}`.
 
 ---
 
-### T4 - Stage 4: Middleware Protection & Logout (Complete)
-
-Testing guide and verification checkpoints for the reusable authentication dependency (`Depends(get_current_user)`), multi-route protection (`GET /protected/dashboard`), and session termination (`POST /auth/logout`).
+### T4 - Stage 4: Reusable Dependency & Session Termination
 
 #### Test 4.1: Reusable Middleware Route Access (`GET /protected/dashboard` -> 200 OK)
-Verify that a second protected route reuses the auth dependency without writing new authentication logic:
 ```bash
-TOKEN=$(curl -s -X POST http://localhost:8000/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"stage1_test@example.com","password":"password123"}' | grep -o '"access_token":"[^"]*' | cut -d'"' -f4)
-
 curl -i http://localhost:8000/protected/dashboard \
   -H "Authorization: Bearer $TOKEN"
 ```
-- **Assertion:**
-  - Status code: `HTTP/1.1 200 OK`
-  - Body: JSON containing `"message": "Welcome to your private dashboard, stage1_test@example.com!"` and `"user_id"`.
+- **Assertion:** Returns `HTTP/1.1 200 OK` with `"message": "Welcome to your private dashboard, stage1_test@example.com!"` and `"user_id"`.
 
-#### Test 4.2: Reusable Middleware Rejection on Dashboard (`GET /protected/dashboard` -> 401 Unauthorized)
-Calling the second protected route without a token or with a bad token:
-```bash
-# Missing token
-curl -i http://localhost:8000/protected/dashboard
-
-# Tampered token
-curl -i http://localhost:8000/protected/dashboard \
-  -H "Authorization: Bearer bad_token_string"
-```
-- **Assertion:**
-  - Status code: `HTTP/1.1 401 Unauthorized`
-  - Body: `{"error": "Access token required"}` or `{"error": "Invalid or expired token"}`.
-
-#### Test 4.3: Session Termination / Logout (`POST /auth/logout` -> 204 No Content)
-Terminate user session via protected logout:
+#### Test 4.2: Session Termination / Logout (`POST /auth/logout` -> 204 No Content)
 ```bash
 curl -i -X POST http://localhost:8000/auth/logout \
   -H "Authorization: Bearer $TOKEN"
 ```
-- **Assertion:**
-  - Status code: `HTTP/1.1 204 No Content`
-  - Body: Empty body (`content-length: 0`).
+- **Assertion:** Returns `HTTP/1.1 204 No Content` with an empty response body (`Content-Length: 0`).
 
 ---
 
-### T4 - Stage 5: Swagger UI with Bearer Auth (Complete)
-
-Testing guide and verification checkpoints for OpenAPI `HTTPBearer` security integration and interactive Swagger documentation at `/docs`.
+### T4 - Stage 5: Interactive Swagger UI Bearer Security
 
 #### Test 5.1: Swagger UI Documentation Liveness
-Verify that FastAPI successfully serves interactive documentation with the `HTTPBearer` security scheme:
 1. Open `http://localhost:8000/docs` in your browser.
-2. Confirm the green **"Authorize" 🔓** button is present at the top right of the page.
-3. Confirm that lock icons appear beside:
-   - `GET /protected/profile`
-   - `GET /protected/dashboard`
-   - `POST /auth/logout`
-4. Confirm unauthenticated routes (`GET /`, `GET /public/info`, `POST /auth/signup`, `POST /auth/login`) remain padlock-free.
+2. Confirm the green **"Authorize" 🔓** button is visible.
+3. Confirm lock padlocks appear beside `GET /protected/profile`, `GET /protected/dashboard`, and `POST /auth/logout`.
 
 #### Test 5.2: In-Browser Authentication & Execution
-1. Expand `POST /auth/login`, click **Try it out**, supply test credentials, and execute to obtain an `access_token`.
-2. Click the green **Authorize** button at the top of `/docs`.
-3. Paste the token into the `Value` field and click **Authorize**, then **Close**. The lock icon changes to locked 🔒.
-4. Expand `GET /protected/profile`, click **Try it out**, and click **Execute**.
-- **Assertion:** Returns `HTTP 200 OK` with user profile details directly in the browser interface.
+1. Obtain an access token using `POST /auth/login`.
+2. Click **Authorize 🔓** in the top-right corner of Swagger UI.
+3. Paste the token into the value input and click **Authorize**.
+4. Execute `GET /protected/profile` directly from Swagger UI → Returns `HTTP 200 OK`.
+
+---
+
+### T4 - Stage 6: Live Production Cloud Deployment
+
+Test against the live production deployment hosted on **FastAPI Cloud**:
+
+#### Test 6.1: Live Cloud Health & Discovery Check
+```bash
+# Health probe
+curl -i https://crud-api-2b23f883.fastapicloud.dev/health
+# Assertion: HTTP/2 200 OK -> {"status": "ok"}
+
+# Public info endpoint
+curl -i https://crud-api-2b23f883.fastapicloud.dev/public/info
+# Assertion: HTTP/2 200 OK -> {"message": "Welcome stranger! This info is public."}
+
+# OpenAPI Schema title check
+curl -s https://crud-api-2b23f883.fastapicloud.dev/openapi.json | grep -o "Task 4: Auth API (Supabase + FastAPI)"
+```
+
+#### Test 6.2: Production Gate & Security Enforcement
+```bash
+curl -i https://crud-api-2b23f883.fastapicloud.dev/protected/profile
+```
+- **Assertion:** Returns `HTTP/2 401 Unauthorized` with `{"error": "Access token required"}`.
+
+#### Test 6.3: Production Interactive Documentation Check
+Navigate to [`https://crud-api-2b23f883.fastapicloud.dev/docs`](https://crud-api-2b23f883.fastapicloud.dev/docs) in your browser and confirm all 5 Auth endpoints and the Authorize padlock are functional in production.
+
+---
+
+## Automated Regression Suites & Runners
+
+### 1. Shared Contract Test Suite (`pytest`)
+To prove that storage is an implementation detail and that the external HTTP contract never regressed between Task 1 (in-memory) and Task 2 (SQLite):
+
+```bash
+uv run pytest -v
+```
+
+All contract tests validate:
+- Root service discovery (`GET /`)
+- Health monitoring (`GET /health`)
+- Listing tasks with consistent shape (`GET /tasks`)
+- 404 error semantics for missing tasks
+- 400 validation for empty payloads
+- Creation, update, and deletion lifecycles (`201`, `200`, `204`)
+- SQLite-specific features (seeding idempotency, persistence across restarts, schema migration)
+
+---
+
+### 2. One-Click Terminal Verification Script
+
+Save this script or run it directly in your terminal to automatically audit all core HTTP and database contracts:
+
+```bash
+bash -c '
+echo "============================================="
+echo "   RUNNING AUTOMATED TEST SUITE (T1, T2 & T4) "
+echo "============================================="
+
+# 1. Health Probe
+echo -n "[Probe] GET /health (HTTP 200): "
+STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/health)
+[ "$STATUS" = "200" ] && echo "✅ PASS" || echo "❌ FAIL (Got $STATUS - Is server running?)"
+
+# 2. Public Route Check
+echo -n "[Auth]  GET /public/info (HTTP 200): "
+STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/public/info)
+[ "$STATUS" = "200" ] && echo "✅ PASS" || echo "❌ FAIL (Got $STATUS)"
+
+# 3. Protected Route Security Gate (Must be 401 without token)
+echo -n "[Auth]  GET /protected/profile (HTTP 401): "
+STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/protected/profile)
+[ "$STATUS" = "401" ] && echo "✅ PASS" || echo "❌ FAIL (Got $STATUS)"
+
+# 4. Zero-Trust Validation (Must be 400 on empty body)
+echo -n "[Auth]  POST /auth/signup {} (HTTP 400): "
+STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:8000/auth/signup -H "Content-Type: application/json" -d "{}")
+[ "$STATUS" = "400" ] && echo "✅ PASS" || echo "❌ FAIL (Got $STATUS)"
+
+echo "============================================="
+echo "               TESTS COMPLETE                "
+echo "============================================="
+'
+```

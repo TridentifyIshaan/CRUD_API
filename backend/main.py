@@ -34,7 +34,7 @@ async def lifespan(app: FastAPI):
 # 4. Core FastAPI App
 app = FastAPI(
     title="Task 4: Auth API (Supabase + FastAPI)",
-    version="1.4.0-alpha.6",
+    version="1.4.0",
     description="Authentication API with Supabase: signup, login, logout, and protected routes.",
     lifespan=lifespan
 )
@@ -45,6 +45,10 @@ async def root():
     return {
         "message": "Server running & connected to Supabase"
     }
+
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
 
 # ---- Standard Error Format Handlers ----
 @app.exception_handler(HTTPException)
