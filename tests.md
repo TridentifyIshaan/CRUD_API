@@ -38,7 +38,7 @@ Comprehensive testing guide and verification checkpoints for **Task 1** (*In-Mem
   - [Stage 2: Public & Protected Gates (Complete)](#t4---stage-2-public--protected-gates-complete)
   - [Stage 3: The Guard: Token Verification (Complete)](#t4---stage-3-the-guard-token-verification-complete)
   - [Stage 4: Middleware Protection & Logout (Complete)](#t4---stage-4-middleware-protection--logout-complete)
-  - [Stage 5: Swagger UI with Bearer Auth (Upcoming)](#t4---stage-5-swagger-ui-with-bearer-auth-upcoming)
+  - [Stage 5: Swagger UI with Bearer Auth (Complete)](#t4---stage-5-swagger-ui-with-bearer-auth-complete)
   - [Stage 6: Publish to GitHub (Upcoming)](#t4---stage-6-publish-to-github-upcoming)
 - [One-Click Automated Test Runner](#one-click-automated-test-runner)
 
@@ -1182,3 +1182,26 @@ curl -i -X POST http://localhost:8000/auth/logout \
 - **Assertion:**
   - Status code: `HTTP/1.1 204 No Content`
   - Body: Empty body (`content-length: 0`).
+
+---
+
+### T4 - Stage 5: Swagger UI with Bearer Auth (Complete)
+
+Testing guide and verification checkpoints for OpenAPI `HTTPBearer` security integration and interactive Swagger documentation at `/docs`.
+
+#### Test 5.1: Swagger UI Documentation Liveness
+Verify that FastAPI successfully serves interactive documentation with the `HTTPBearer` security scheme:
+1. Open `http://localhost:8000/docs` in your browser.
+2. Confirm the green **"Authorize" 🔓** button is present at the top right of the page.
+3. Confirm that lock icons appear beside:
+   - `GET /protected/profile`
+   - `GET /protected/dashboard`
+   - `POST /auth/logout`
+4. Confirm unauthenticated routes (`GET /`, `GET /public/info`, `POST /auth/signup`, `POST /auth/login`) remain padlock-free.
+
+#### Test 5.2: In-Browser Authentication & Execution
+1. Expand `POST /auth/login`, click **Try it out**, supply test credentials, and execute to obtain an `access_token`.
+2. Click the green **Authorize** button at the top of `/docs`.
+3. Paste the token into the `Value` field and click **Authorize**, then **Close**. The lock icon changes to locked 🔒.
+4. Expand `GET /protected/profile`, click **Try it out**, and click **Execute**.
+- **Assertion:** Returns `HTTP 200 OK` with user profile details directly in the browser interface.

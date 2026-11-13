@@ -1,11 +1,12 @@
 import os # for operating system interactions (accessing environment variables)
 from contextlib import asynccontextmanager # for managing server startup/shutdown
 from dotenv import load_dotenv # for reading environment variables from .env
-from fastapi import FastAPI, HTTPException, Request, Header, Depends
+from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.exceptions import RequestValidationError # for request body validation errors
 from fastapi.responses import JSONResponse # for returning JSON responses
 from pydantic import BaseModel # for defining request/response bodies
 from supabase import create_client, Client # for connecting to Supabase
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials # for protected route auth.
 
 '''
 # Task 4: Auth - Login & Protect)
@@ -33,7 +34,7 @@ async def lifespan(app: FastAPI):
 # 4. Core FastAPI App
 app = FastAPI(
     title="Task 4: Auth API (Supabase + FastAPI)",
-    version="1.4.0-alpha.5",
+    version="1.4.0-alpha.6",
     description="Authentication API with Supabase: signup, login, logout, and protected routes.",
     lifespan=lifespan
 )
@@ -122,19 +123,20 @@ async def public_info():
         "message": "Welcome stranger! This info is public."
     }
 
-# Task 4 - STAGE 4: Middleware protection & logout
+# Task 4 - STAGE 4 & 5: Middleware protection, Swagger UI Bearer Auth & logout
 
-# 1. Reusable Auth Dependency (The Guard)
-async def get_current_user(authorization: str | None = Header(None)) -> dict:
-    if not authorization:
+# 1. Security scheme that tells FastAPI & Swagger UI to display the "Authorize" padlock
+security = HTTPBearer(auto_error=False)
+
+# 2. Reusable Auth Dependency (The Guard)
+async def get_current_user(credentials: HTTPAuthorizationCredentials | None = Depends(security)) -> dict:
+    # Check if a Bearer token was provided
+    if not credentials or not credentials.credentials:
         raise HTTPException(status_code=401, detail="Access token required")
 
-    parts = authorization.split()
-    if len(parts) != 2 or parts[0].lower() != "bearer" or not parts[1].strip():
-        raise HTTPException(status_code=401, detail="Access token required")
+    token = credentials.credentials.strip()
 
-    token = parts[1].strip()
-
+    # Ask Supabase whether the token is authentic and valid
     try:
         user_response = supabase.auth.get_user(token)
         if not user_response or not user_response.user:
@@ -151,12 +153,12 @@ async def get_current_user(authorization: str | None = Header(None)) -> dict:
     except Exception:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
 
-# 2. Refactored Profile route using the guard
+# 3. Protected Profile route using the guard
 @app.get("/protected/profile")
 async def protected_profile(current_user: dict = Depends(get_current_user)):
     return current_user
 
-# 3. Second Protected route proving middleware reusability
+# 4. Second Protected route proving middleware reusability
 @app.get("/protected/dashboard")
 async def protected_dashboard(current_user: dict = Depends(get_current_user)):
     return {
@@ -164,7 +166,7 @@ async def protected_dashboard(current_user: dict = Depends(get_current_user)):
         "user_id": current_user["id"]
     }
 
-# 4. Protected Logout Route (Returns 204 No Content)
+# 5. Protected Logout Route (Returns 204 No Content)
 @app.post("/auth/logout", status_code=204)
 async def logout(_: dict = Depends(get_current_user)):
     try:

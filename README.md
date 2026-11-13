@@ -312,11 +312,11 @@ The project was delivered incrementally across 7 structured stages:
 | **2** | **Public & Protected Gates**: `GET /public/info` & unverified `GET /protected/profile` | ✅ Complete |
 | **3** | **The Guard (Token Verification)**: `getUser(jwt)` call & safe user metadata extraction | ✅ Complete |
 | **4** | **Middleware Protection & Logout**: Reusable auth dependency & `POST /auth/logout` | ✅ Complete |
-| **5** | **Swagger UI with Bearer Auth**: `HTTPBearer` padlock on `/docs` | ⏳ Next |
-| **6** | **Publish to GitHub**: Public repo, clean README & verified `.gitignore` | ⏳ Upcoming |
+| **5** | **Swagger UI with Bearer Auth**: `HTTPBearer` padlock on `/docs` | ✅ Complete |
+| **6** | **Publish to GitHub**: Public repo, clean README & verified `.gitignore` | ⏳ Next |
 | **7** | **Bonus AI Rematch**: Quarantined AI auth API review & prompt iteration | ⏳ Upcoming |
 
-> Beginning Task 4! Focuses on securing backend endpoints with Supabase Auth, JSON Web Tokens (JWT), and reusable route dependencies. Stage 4 introduces reusable FastAPI auth dependencies (`Depends(get_current_user)`), guarding `/protected/profile`, `/protected/dashboard`, and terminating sessions via `POST /auth/logout`.
+> Beginning Task 4! Focuses on securing backend endpoints with Supabase Auth, JSON Web Tokens (JWT), and reusable route dependencies. Stage 5 integrates OpenAPI `HTTPBearer` security schemes into `/docs`, exposing the interactive Authorize padlock for token-gated route testing directly in the browser.
 
 ---
 
@@ -720,6 +720,7 @@ This project follows [Semantic Versioning 2.0.0](https://semver.org/). Every rel
 | `v1.4.0a3` | Task 4 Stage 2: Public route and unverified protected route |
 | `v1.4.0a4` | Task 4 Stage 3: Profile route token verification |
 | `v1.4.0a5` | Task 4 Stage 4: Auth middleware and logout endpoint |
+| `v1.4.0a6` | Task 4 Stage 5: Swagger UI documentation with bearer auth |
 
 ```sh
 git tag -l                 # list versions
