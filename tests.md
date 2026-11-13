@@ -35,7 +35,7 @@ Comprehensive testing guide and verification checkpoints for **Task 1** (*In-Mem
 - [Task 4: Authentication & Protected Routes (Supabase + JWT) (T4)](#task-4-authentication--protected-routes-supabase--jwt-t4)
   - [Stage 0: Setup Supabase & Server (Complete)](#t4---stage-0-setup-supabase--server-complete)
   - [Stage 1: Open Auth (Sign Up & Log In) (Complete)](#t4---stage-1-open-auth-sign-up--log-in-complete)
-  - [Stage 2: Public & Protected Gates (Upcoming)](#t4---stage-2-public--protected-gates-upcoming)
+  - [Stage 2: Public & Protected Gates (Complete)](#t4---stage-2-public--protected-gates-complete)
   - [Stage 3: The Guard: Token Verification (Upcoming)](#t4---stage-3-the-guard-token-verification-upcoming)
   - [Stage 4: Middleware Protection & Logout (Upcoming)](#t4---stage-4-middleware-protection--logout-upcoming)
   - [Stage 5: Swagger UI with Bearer Auth (Upcoming)](#t4---stage-5-swagger-ui-with-bearer-auth-upcoming)
@@ -1050,3 +1050,50 @@ curl -i -X POST http://localhost:8000/auth/login \
 - **Assertion:** 
   - Status code: `HTTP/1.1 401 Unauthorized`
   - Body: Single error message `{"error": "Invalid login credentials"}`.
+
+---
+
+### T4 - Stage 2: The Public & Protected Gates (Complete)
+
+Testing guide and verification checkpoints for the public informational route (`GET /public/info`) and the unverified bearer token extraction route (`GET /protected/profile`).
+
+#### Test 2.1: Public Route Access (`GET /public/info` -> 200 OK)
+Verify that public information can be accessed without any credentials or Authorization headers:
+```bash
+curl -i http://localhost:8000/public/info
+```
+- **Assertion:**
+  - Status code: `HTTP/1.1 200 OK`
+  - Body: `{"message": "Welcome stranger! This info is public."}`
+
+#### Test 2.2: Protected Route Without Token (`GET /protected/profile` -> 401 Unauthorized)
+Accessing the protected route without presenting an Authorization header must be rejected:
+```bash
+curl -i http://localhost:8000/protected/profile
+```
+- **Assertion:**
+  - Status code: `HTTP/1.1 401 Unauthorized`
+  - Body: `{"error": "Access token required"}`
+
+#### Test 2.3: Protected Route With Malformed Header (`GET /protected/profile` -> 401 Unauthorized)
+Presenting a non-Bearer scheme or empty token must be rejected:
+```bash
+# Non-Bearer scheme
+curl -i http://localhost:8000/protected/profile -H "Authorization: Basic 12345"
+
+# Missing token string
+curl -i http://localhost:8000/protected/profile -H "Authorization: Bearer "
+```
+- **Assertion:**
+  - Status code: `HTTP/1.1 401 Unauthorized`
+  - Body: `{"error": "Access token required"}`
+
+#### Test 2.4: Protected Route With Bearer Token Presented (`GET /protected/profile` -> 200 OK)
+Presenting a properly formatted Bearer token is accepted at the gate (unverified):
+```bash
+curl -i http://localhost:8000/protected/profile \
+  -H "Authorization: Bearer my_test_token"
+```
+- **Assertion:**
+  - Status code: `HTTP/1.1 200 OK`
+  - Body: Contains `"message": "Token presented successfully (unverified)"` and `"token": "my_test_token"`.

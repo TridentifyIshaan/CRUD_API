@@ -1,7 +1,7 @@
 import os # for operating system interactions (accessing environment variables)
 from contextlib import asynccontextmanager # for managing server startup/shutdown
 from dotenv import load_dotenv # for reading environment variables from .env
-from fastapi import FastAPI, HTTPException, Request # for raising HTTP errors
+from fastapi import FastAPI, HTTPException, Request, Header # for raising HTTP errors
 from fastapi.exceptions import RequestValidationError # for request body validation errors
 from fastapi.responses import JSONResponse # for returning JSON responses
 from pydantic import BaseModel # for defining request/response bodies
@@ -33,7 +33,7 @@ async def lifespan(app: FastAPI):
 # 4. Core FastAPI App
 app = FastAPI(
     title="Task 4: Auth API (Supabase + FastAPI)",
-    version="1.4.0-alpha.2",
+    version="1.4.0-alpha.3",
     description="Authentication API with Supabase: signup, login, logout, and protected routes.",
     lifespan=lifespan
 )
@@ -113,3 +113,29 @@ async def login(credentials:AuthRequest):
         raise 
     except Exception:
         raise HTTPException(status_code=401, detail="Invalid login credentials")
+
+# Task 4 - STAGE 2: The public & protected gates
+# 1. Public Endpoint (No auth required)
+@app.get("/public/info")
+async def public_info():
+    return {
+        "message": "Welcome stranger! This info is public."
+    }
+
+# 2. Protected Endpoint (Unverified token extraction)
+@app.get("/protected/profile")
+async def protected_profile(authorization: str | None = Header(None)):
+    # Check if Authorization header was sent
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Access token required")
+    # Verify standard 'Bearer <token>' format
+    parts = authorization.split()
+    if len(parts) != 2 or parts[0].lower() != "bearer" or not parts[1].strip():
+        raise HTTPException(status_code=401, detail="Access token required")
+    token = parts[1].strip()
+
+    # Acknowledge receipt of the token without verifying it yet
+    return {
+        "message": "Token presented successfully (unverified)",
+        "token": token
+    }

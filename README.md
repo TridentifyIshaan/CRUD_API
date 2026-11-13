@@ -309,14 +309,14 @@ The project was delivered incrementally across 7 structured stages:
 | :---: | :--- | :---: |
 | **0** | **Setup Supabase & Server**: Supabase project, `.env`, Supabase SDK client & startup log | ✅ Complete |
 | **1** | **Open Auth (Sign Up & Log In)**: `POST /auth/signup` & `POST /auth/login` with JWT issue | ✅ Complete |
-| **2** | **Public & Protected Gates**: `GET /public/info` & unverified `GET /protected/profile` | ⏳ Next |
-| **3** | **The Guard (Token Verification)**: `getUser(jwt)` call & safe user metadata extraction | ⏳ Upcoming |
+| **2** | **Public & Protected Gates**: `GET /public/info` & unverified `GET /protected/profile` | ✅ Complete |
+| **3** | **The Guard (Token Verification)**: `getUser(jwt)` call & safe user metadata extraction | ⏳ Next |
 | **4** | **Middleware Protection & Logout**: Reusable auth dependency & `POST /auth/logout` | ⏳ Upcoming |
 | **5** | **Swagger UI with Bearer Auth**: `HTTPBearer` padlock on `/docs` | ⏳ Upcoming |
 | **6** | **Publish to GitHub**: Public repo, clean README & verified `.gitignore` | ⏳ Upcoming |
 | **7** | **Bonus AI Rematch**: Quarantined AI auth API review & prompt iteration | ⏳ Upcoming |
 
-> Beginning Task 4! Focuses on securing backend endpoints with Supabase Auth, JSON Web Tokens (JWT), and reusable route dependencies. Stage 1 delivers functional user registration and token-issuing login endpoints.
+> Beginning Task 4! Focuses on securing backend endpoints with Supabase Auth, JSON Web Tokens (JWT), and reusable route dependencies. Stage 2 establishes the public route (`/public/info`) and unverified bearer-token-gated route (`/protected/profile`).
 
 ---
 
@@ -716,6 +716,7 @@ This project follows [Semantic Versioning 2.0.0](https://semver.org/). Every rel
 | `v1.3.1` | Task 3 AI rematch: regenerated AI stack (`/health` contract restored, Postgres not published) |
 | `v1.4.0-alpha.1` | Task 4 Stage 0: Setup Supabase & server |
 | `v1.4.0-alpha.2` | Task 4 Stage 1: Signup and login routes working |
+| `v1.4.0-alpha.3` | Task 4 Stage 2: Public route and unverified protected route |
 
 ```sh
 git tag -l                 # list versions
