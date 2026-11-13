@@ -355,7 +355,7 @@ wheels = [
 
 [[package]]
 name = "crud-api"
-version = "1.4.0a4"
+version = "1.4.0a5"
 source = { virtual = "." }
 dependencies = [
     { name = "fastapi", extra = ["standard"] },

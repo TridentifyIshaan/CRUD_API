@@ -311,12 +311,12 @@ The project was delivered incrementally across 7 structured stages:
 | **1** | **Open Auth (Sign Up & Log In)**: `POST /auth/signup` & `POST /auth/login` with JWT issue | ✅ Complete |
 | **2** | **Public & Protected Gates**: `GET /public/info` & unverified `GET /protected/profile` | ✅ Complete |
 | **3** | **The Guard (Token Verification)**: `getUser(jwt)` call & safe user metadata extraction | ✅ Complete |
-| **4** | **Middleware Protection & Logout**: Reusable auth dependency & `POST /auth/logout` | ⏳ Next |
-| **5** | **Swagger UI with Bearer Auth**: `HTTPBearer` padlock on `/docs` | ⏳ Upcoming |
+| **4** | **Middleware Protection & Logout**: Reusable auth dependency & `POST /auth/logout` | ✅ Complete |
+| **5** | **Swagger UI with Bearer Auth**: `HTTPBearer` padlock on `/docs` | ⏳ Next |
 | **6** | **Publish to GitHub**: Public repo, clean README & verified `.gitignore` | ⏳ Upcoming |
 | **7** | **Bonus AI Rematch**: Quarantined AI auth API review & prompt iteration | ⏳ Upcoming |
 
-> Beginning Task 4! Focuses on securing backend endpoints with Supabase Auth, JSON Web Tokens (JWT), and reusable route dependencies. Stage 3 implements cryptographic token verification via Supabase `getUser(jwt)`, safely returning user metadata on authentic tokens while rejecting forged or expired passes with HTTP 401.
+> Beginning Task 4! Focuses on securing backend endpoints with Supabase Auth, JSON Web Tokens (JWT), and reusable route dependencies. Stage 4 introduces reusable FastAPI auth dependencies (`Depends(get_current_user)`), guarding `/protected/profile`, `/protected/dashboard`, and terminating sessions via `POST /auth/logout`.
 
 ---
 
@@ -329,9 +329,10 @@ The project was delivered incrementally across 7 structured stages:
 | `GET` | `/` | `200 OK` | Service metadata & Supabase connection confirmation | None | None |
 | `POST` | `/auth/signup` | `201 Created` / `400` | Register a new user with Supabase Auth | None | `{"email": "str", "password": "str"}` |
 | `POST` | `/auth/login` | `200 OK` / `400` / `401` | Authenticate user & issue access JWT + refresh token | None | `{"email": "str", "password": "str"}` |
-| `POST` | `/auth/logout` | `204 No Content` / `401` | End current user session *(Stage 4)* | `Bearer <token>` | None |
+| `POST` | `/auth/logout` | `204 No Content` / `401` | End current user session | `Bearer <token>` | None |
 | `GET` | `/public/info` | `200 OK` | Public unauthenticated route *(Stage 2)* | None | None |
 | `GET` | `/protected/profile`| `200 OK` / `401` | Retrieve authenticated user profile metadata *(Stage 2–3)*| `Bearer <token>` | None |
+| `GET` | `/protected/dashboard`| `200 OK` / `401`| Reusable guard dashboard checkpoint *(Stage 4)* | `Bearer <token>` | None |
 
 ### Task 1–3: Tasks CRUD Endpoints (Preserved in `task1_main.py`, `task2_main.py`, `task3_main.py`)
 
@@ -718,6 +719,7 @@ This project follows [Semantic Versioning 2.0.0](https://semver.org/). Every rel
 | `v1.4.0a2` | Task 4 Stage 1: Signup and login routes working |
 | `v1.4.0a3` | Task 4 Stage 2: Public route and unverified protected route |
 | `v1.4.0a4` | Task 4 Stage 3: Profile route token verification |
+| `v1.4.0a5` | Task 4 Stage 4: Auth middleware and logout endpoint |
 
 ```sh
 git tag -l                 # list versions

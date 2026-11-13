@@ -37,7 +37,7 @@ Comprehensive testing guide and verification checkpoints for **Task 1** (*In-Mem
   - [Stage 1: Open Auth (Sign Up & Log In) (Complete)](#t4---stage-1-open-auth-sign-up--log-in-complete)
   - [Stage 2: Public & Protected Gates (Complete)](#t4---stage-2-public--protected-gates-complete)
   - [Stage 3: The Guard: Token Verification (Complete)](#t4---stage-3-the-guard-token-verification-complete)
-  - [Stage 4: Middleware Protection & Logout (Upcoming)](#t4---stage-4-middleware-protection--logout-upcoming)
+  - [Stage 4: Middleware Protection & Logout (Complete)](#t4---stage-4-middleware-protection--logout-complete)
   - [Stage 5: Swagger UI with Bearer Auth (Upcoming)](#t4---stage-5-swagger-ui-with-bearer-auth-upcoming)
   - [Stage 6: Publish to GitHub (Upcoming)](#t4---stage-6-publish-to-github-upcoming)
 - [One-Click Automated Test Runner](#one-click-automated-test-runner)
@@ -1138,3 +1138,47 @@ curl -i http://localhost:8000/protected/profile
 - **Assertion:**
   - Status code: `HTTP/1.1 401 Unauthorized`
   - Body: Single error message `{"error": "Access token required"}`.
+
+---
+
+### T4 - Stage 4: Middleware Protection & Logout (Complete)
+
+Testing guide and verification checkpoints for the reusable authentication dependency (`Depends(get_current_user)`), multi-route protection (`GET /protected/dashboard`), and session termination (`POST /auth/logout`).
+
+#### Test 4.1: Reusable Middleware Route Access (`GET /protected/dashboard` -> 200 OK)
+Verify that a second protected route reuses the auth dependency without writing new authentication logic:
+```bash
+TOKEN=$(curl -s -X POST http://localhost:8000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"stage1_test@example.com","password":"password123"}' | grep -o '"access_token":"[^"]*' | cut -d'"' -f4)
+
+curl -i http://localhost:8000/protected/dashboard \
+  -H "Authorization: Bearer $TOKEN"
+```
+- **Assertion:**
+  - Status code: `HTTP/1.1 200 OK`
+  - Body: JSON containing `"message": "Welcome to your private dashboard, stage1_test@example.com!"` and `"user_id"`.
+
+#### Test 4.2: Reusable Middleware Rejection on Dashboard (`GET /protected/dashboard` -> 401 Unauthorized)
+Calling the second protected route without a token or with a bad token:
+```bash
+# Missing token
+curl -i http://localhost:8000/protected/dashboard
+
+# Tampered token
+curl -i http://localhost:8000/protected/dashboard \
+  -H "Authorization: Bearer bad_token_string"
+```
+- **Assertion:**
+  - Status code: `HTTP/1.1 401 Unauthorized`
+  - Body: `{"error": "Access token required"}` or `{"error": "Invalid or expired token"}`.
+
+#### Test 4.3: Session Termination / Logout (`POST /auth/logout` -> 204 No Content)
+Terminate user session via protected logout:
+```bash
+curl -i -X POST http://localhost:8000/auth/logout \
+  -H "Authorization: Bearer $TOKEN"
+```
+- **Assertion:**
+  - Status code: `HTTP/1.1 204 No Content`
+  - Body: Empty body (`content-length: 0`).
